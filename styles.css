@@ -1,0 +1,98 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f0f0;
+  color: #333;
+  margin: 30px;
+}
+
+header {
+  background-color: #333;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  height: calc(100vh - 60px); /* Adjust for body margin */
+  position: fixed;
+  left: 0;
+  top: 30px; /* Adjust for body margin */
+  width: 170px;
+  overflow-y: auto; /* Add scrollbar when content overflows */
+}
+
+.brand {
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+nav {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+nav a {
+  text-decoration: none;
+  text-align: center;
+  display: block;
+  background-color: #4c6ef5;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+nav a:hover {
+  background-color: #3b5bdb;
+}
+
+nav a.active {
+  background-color: #1c2333;
+  box-shadow: inset 0 0 0 2px #4c6ef5;
+}
+
+nav a.back {
+  background-color: #e03131;
+}
+
+nav a.back:hover {
+  background-color: #c92a2a;
+}
+
+main {
+  max-width: 1000px;
+  margin: 20px auto 20px calc(170px + 40px);
+  padding: 24px 30px;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+main pre {
+  background-color: #f5f5f5;
+  padding: 12px;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+main code {
+  background-color: #f5f5f5;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+main pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+h1, h2, p {
+  margin: 0 0 16px;
+}
+
+.placeholder {
+  color: #888;
+  font-style: italic;
+}
