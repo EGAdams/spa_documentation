@@ -94,10 +94,16 @@ classDiagram
   overflow: hidden;
   cursor: grab;
   touch-action: none;
+  user-select: none;
   background:
     linear-gradient( 90deg, rgba( 0, 0, 0, 0.04 ) 1px, transparent 1px ) 0 0 / 20px 20px,
     linear-gradient( rgba( 0, 0, 0, 0.04 ) 1px, transparent 1px ) 0 0 / 20px 20px,
     #fafafa;
+}
+
+.mmd-viewport ::selection {
+  background: transparent;
+  color: inherit;
 }
 
 .mmd-viewport.dragging {
@@ -109,7 +115,6 @@ classDiagram
   top: 0;
   left: 0;
   transform-origin: 0 0;
-  will-change: transform;
 }
 </style>
 
@@ -119,7 +124,7 @@ classDiagram
     if ( window.mermaid ) return Promise.resolve( window.mermaid );
     return new Promise( ( resolve, reject ) => {
       const script = document.createElement( "script" );
-      script.src = "/vendor/mermaid.min.js";
+      script.src = "vendor/mermaid.min.js";
       script.onload = () => resolve( window.mermaid );
       script.onerror = reject;
       document.head.appendChild( script );

@@ -1,6 +1,6 @@
 ---
 name: building-the-spa
-description: Conventions for extending the agent_blocks documentation SPA (spa_documentation/) — directory layout, nav drill-down behavior, and file-naming rules to follow when adding new sections/items or filling in blank pages. Use when adding a new agent/tab, filling in a skeleton HTML file, or touching index.html/app.js/styles.css in spa_documentation.
+description: Conventions for extending the agent_blocks documentation SPA (spa_documentation/) — directory layout, nav drill-down behavior, source mapping, fixed detail tabs, and Mermaid verification. Use when adding a new agent/tab, filling in a skeleton HTML file, or touching SPA code or documentation pages.
 ---
 
 # Building the agent_blocks documentation SPA
@@ -12,12 +12,19 @@ on `/home/adamsl/largo_spa` (fixed left sidebar nav, `#content` main area,
 `fetch()` html partials into it).
 
 Run it with `./start.sh` (optionally `./start.sh <port>`) from this directory,
-then open `http://localhost:8931/index.html`.
+then open `http://localhost:8931/index.html`. `start.sh` launches `server.py`,
+not a bare static server, because the Update Documentation tab uses its API.
 
 ## Files
 - `index.html` — shell: `.brand` label + a single `<nav id="nav">`, and `<main id="content">`.
-- `app.js` — all navigation logic and the `sections` config object.
+- `app.js` — all navigation logic, the `sections` config object, and the live
+  Update Documentation button/status behavior.
 - `styles.css` — fixed left sidebar (170px), single nav link style, `.back` variant (red).
+- `doc_source_map.py` — maps each SPA leaf path to its real source file and
+  defines the six fixed leaf filenames.
+- `server.py` — static server plus git-status and documentation-update routes.
+- `update_documentation_agent.py` — regenerates source-derived pages for one
+  mapped leaf and writes its update report.
 - `home_claude_md.html` — generated from the repo's root `CLAUDE.md` via Python's
   `markdown` package. Regenerate after editing `CLAUDE.md`:
   ```bash
@@ -37,20 +44,20 @@ level — it is not three nav bars stacked on top of each other. Exactly one of
 these renders at a time:
 
 1. **Home level**: `Home` (active) + one link per top-level key in `sections`.
-2. **Section level** (a top-level tab was clicked): `Home` + one link per item
-   in that section's `items`. Only that section's items show — sibling
-   sections disappear until you click `Home` again.
-3. **Item/detail level** (an item was clicked): `Back` (red) + the fixed detail
-   tabs (`Source`, `Class Diagram`, `Sequence Diagram`, `Construction Status`).
-   `Back` returns to the section level, not to Home.
+2. **Folder level** (a top-level tab or nested group was clicked): `Home` or
+   `Back` + one link per child in that node's `items`. Only those children
+   show; sibling sections/groups disappear until navigating back.
+3. **Item/detail level** (a leaf item was clicked): `Back` (red) + the six fixed
+   detail tabs (`Source`, `Class Diagram`, `Sequence Diagram`, `Construction
+   Status`, `Update Documentation`). `Back` returns to the containing folder.
 
 When adding nav behavior, preserve this: never show two levels at once.
 
 ## Directory layout mirrors `sections` in app.js
 Each section key in `app.js`'s `sections` object is expected to have a same-named
-folder here (e.g. `catherine_agent_sdk/`), with one subfolder per item
-(e.g. `basic_agent/`, `future_agent/`). Every item folder currently holds these
-exact five files (see `catherine_agent_sdk/basic_agent/` for the reference set):
+folder here (e.g. `catherine_agent_sdk/`). Nested `items` maps mirror nested
+folders; leaf items hold these exact six files (see
+`catherine_agent_sdk/basic_agent/` for the reference set):
 
 ```
 basic_agent.html                       # overview, loads when the item tab is clicked
@@ -58,6 +65,7 @@ basic_agent.py.html                    # "Source" detail tab
 basic_agent_construction_status.html   # "Construction Status" detail tab
 mermaid_class.html                     # "Class Diagram" detail tab
 mermaid_sequence.html                  # "Sequence Diagram" detail tab
+basic_agent_update_documentation.html  # report body for "Update Documentation"
 ```
 
 Yes — the basenames are literally `basic_agent*` even inside `future_agent/`.
@@ -68,9 +76,16 @@ decision to revisit `app.js`, not an oversight.
 
 ## Adding a new section or item
 1. Add the key to `sections` in `app.js` (label + `items: {}` or item map).
-2. Create the matching folder(s) under `spa_documentation/`, each with the five
+2. Create the matching folder(s) under `spa_documentation/`, each leaf with the six
    files above (can be empty — see below).
-3. No other wiring needed; the nav renders from the `sections` object.
+3. Add or update its source mapping in `doc_source_map.py`; without a resolvable
+   mapping, git status and Update Documentation cannot work.
+4. No other nav wiring is needed; navigation renders from `sections`.
+
+Folder nodes may have an optional `_overview.html` alongside their child
+folders. `showCurrentContent()` loads it as the folder cover page and executes
+any embedded scripts, so a polished overview can include the same interactive
+Mermaid pattern as detail pages.
 
 ## Blank files are expected, not bugs
 Skeleton files are created empty and filled in later. `loadFile()` in `app.js`
@@ -88,10 +103,12 @@ no wrapper markup required, `loadFile()` injects it as-is into `#content`.
   `header` width and this margin together.
 
 ## Source tab: syntax highlighting and header line
-`*.py.html` detail pages hold the Python source pre-rendered as VS Code
-Dark+-colored HTML, not raw `<pre>` text — there's no highlighter wired into
-the SPA at runtime, so generate it ahead of time with Pygments and a custom
-style class mapping VS Code Dark+ token colors, then paste the output in.
+`basic_agent.py.html` is the fixed legacy filename for the Source tab; the real
+mapped source may be Python or TypeScript. It holds source pre-rendered as VS
+Code Dark+-colored HTML, not raw `<pre>` text — there's no highlighter wired
+into the SPA at runtime, so generate it ahead of time with the language-correct
+Pygments lexer and a custom style class mapping VS Code Dark+ token colors,
+then paste the output in.
 See `catherine_agent_sdk/basic_agent/basic_agent.py.html` for the reference:
 a `<style>` block scoped to `.vscode-pre` + Pygments' `.get_style_defs()`
 output, then `<pre class="vscode-pre"><code>...</code></pre>` with the
@@ -110,7 +127,25 @@ italic, no new CSS needed):
 `Lines` is the source file's line count (`wc -l`), `Last modified` is its
 mtime (`stat -c '%y'`), formatted as `Month, day HH:MM:SS`. This is
 generated once and pasted in as static text, same as the highlighted body —
-regenerate both by hand if the underlying `.py` file changes.
+regenerate both if the mapped source file changes.
+
+## Update Documentation tab and source status
+
+The sixth tab loads `basic_agent_update_documentation.html`, then `app.js`
+fetches relative `api/git-status?item=...` once for the open detail page. Keep
+that URL relative: the SPA also runs behind `/agent-block/` in the main Letta
+dashboard, where `/api/...` would target the wrong server.
+
+`doc_source_map.py` is the source of truth for leaf-to-source mappings. Its
+`DOC_FILES` includes all six page names; `SOURCE_DERIVED_DOCS` currently marks
+Source, Class Diagram, and Sequence Diagram as generated evidence. A leaf is
+dirty when its mapped source is Git-dirty or any source-derived page is missing
+or empty. The Update button then starts `update_documentation_agent.py` through
+`server.py` and displays the generated report in the sixth file.
+
+The updater began as a Python-source workflow. When adding TypeScript-backed
+objects, ensure generated source uses a TypeScript lexer and language-appropriate
+diagram content; the `.py.html` filename does not make the source Python.
 
 ## Mermaid diagrams (Class/Sequence tabs) need JS execution + vendoring
 `mermaid_class.html` and `mermaid_sequence.html` are not static markup —
@@ -129,8 +164,14 @@ SPA, all already wired up as of this skill's last update:
    means finding another local copy or downloading one by hand). Diagram
    pages lazy-load it with a small `ensureMermaidLoaded()` helper that checks
    `window.mermaid` first (so navigating between diagram tabs doesn't
-   re-fetch it) and otherwise appends `<script src="/vendor/mermaid.min.js">`
-   to `<head>`.
+   re-fetch it) and otherwise appends `<script src="vendor/mermaid.min.js">`
+   to `<head>` — **relative, not `/vendor/mermaid.min.js`**. This page can be
+   reverse-proxied under a subpath (e.g. `/agent-block/` in the letta-code
+   dashboard); a leading slash resolves against the *proxy's* domain root
+   and 404s there, same failure mode as the `/api/git-status` fetch in
+   app.js. The document is always loaded at the server's own root regardless
+   of how deep the current item's nav path is, so a plain relative path is
+   always correct here.
 3. **The host document must declare `<meta charset="utf-8">`.** `index.html`
    already does. This matters because mermaid's minified bundle contains
    multibyte UTF-8 characters; without an explicit charset on the *document*
@@ -152,6 +193,9 @@ rather than re-deriving it:
   grid background) > `#mmd-stage` (`.mmd-stage`, `position: absolute`,
   `transform-origin: 0 0`) > `<pre class="mermaid" id="mmd-source">` holding
   the raw diagram definition text.
+- Do not add `will-change: transform` to `.mmd-stage`. Keeping the SVG in a
+  persistent compositor layer can rasterize it and make Mermaid text blurry;
+  the normal `transform` updates already provide the required pan and zoom.
 - `ensureMermaidLoaded()` → `mermaid.initialize({ startOnLoad: false })` →
   `mermaid.render()` the source text → `stage.innerHTML = svg` → then wire up
   pan/zoom on the rendered stage.
