@@ -35,6 +35,7 @@ VOICE_COMMUNICATION_SOURCE_FILES = {
     "interfaces": "interfaces/index.ts",
     "typescript_contracts": "typescript_contracts/contracts.ts",
     "pydantic_models": "pydantic_models/models.py",
+    "input_draft": "input_draft/input_draft.ts",
     "voice_session": "voice_session/voice_session.ts",
     "conversation_agent": "conversation_agent/conversation_agent.ts",
     "spoken_output_policy": "spoken_output_policy/spoken_output_policy.ts",
@@ -79,6 +80,9 @@ def resolve_source_path( item_path: str ) -> Path | None:
         return None
 
     section, rest = parts[ 0 ], parts[ 1: ]
+
+    if section == "claude_agent_adapter" and len( rest ) == 1:
+        return REPO_ROOT / "claude_agent_adapter" / f"{rest[ 0 ]}.py"
 
     if section == "catherine_agent_sdk" and len( rest ) == 1:
         return REPO_ROOT / "catherine_agent_sdk" / f"{rest[ 0 ]}.py"

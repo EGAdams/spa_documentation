@@ -11,6 +11,10 @@
       <a href="/voice_communication_plan.html" target="_blank" rel="noopener noreferrer">open the original Voice Communication workspace</a>
       · source <code>/home/adamsl/letta-code/dashboard/voice_communication_plan.html</code>
     </p>
+    <p class="vc-reference">Current Toyota Input Options working map:
+      <code>/home/adamsl/letta-code/notes_plans_handoffs/toyota_input_options_agent_blocks_map.md</code>
+      · new work belongs in <code>/home/adamsl/agent_blocks/voice_communication</code>
+    </p>
   </header>
 
   <section class="vc-section">
@@ -49,6 +53,7 @@
     <pre class="vc-atlas"><code>LIVE DASHBOARD — proven behavior
   Python strategies      transcription · cleanup · routing · receptionist intent · synthesis
   Browser ports          listener · recorder · note surface · transcript buffer · speaker
+  Clear-input seam       TranscriptSyncedNote can reset both stores; Start Listening does not call it
   Direct renderer seam   InputOptionsRenderer → /api/letta-code-message
 
 BUILT IN LETTA-CODE — tested, no live renderer caller
@@ -60,6 +65,7 @@ BUILT IN LETTA-CODE — tested, no live renderer caller
 
 AGENT BLOCKS TARGET — skeleton
   TypeScript             Toyota/application ports and compile-time shapes
+  InputDraft             synchronized visible-text + transcript-state mutation
   Pydantic               fail-closed JSON request/event validation
   PipecatServiceClient   typed adapter across the process boundary
   PipecatLocalService    Python facade in a separate local process
@@ -93,6 +99,7 @@ AGENT BLOCKS TARGET — skeleton
     IOR["InputOptionsRenderer"]
     APP["ToyotaVoiceApplication&lt;br/&gt;Facade"]
     CO["ConversationCoordinator"]
+    ID["InputDraft&lt;br/&gt;synchronized adapter"]
     VS["VoiceSession"]
     SOP["SpokenOutputPolicy"]
     ICA{{"IConversationAgent"}}
@@ -112,6 +119,8 @@ AGENT BLOCKS TARGET — skeleton
   LETTA[(Letta)]
   IOR --&gt; APP
   APP --&gt; CO
+  CO --&gt; ID
+  ID -.adapts.-&gt; IOR
   CO --&gt; VS
   CO --&gt; ICA
   ICA -.implemented by.-&gt; LAA
@@ -636,4 +645,3 @@ AGENT BLOCKS TARGET — skeleton
   } );
 } )();
 </script>
-

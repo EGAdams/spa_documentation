@@ -47,11 +47,63 @@ these renders at a time:
 2. **Folder level** (a top-level tab or nested group was clicked): `Home` or
    `Back` + one link per child in that node's `items`. Only those children
    show; sibling sections/groups disappear until navigating back.
-3. **Item/detail level** (a leaf item was clicked): `Back` (red) + the six fixed
+3. **Item/detail level** (a leaf item was clicked): `Back` (red) + the five fixed
    detail tabs (`Source`, `Class Diagram`, `Sequence Diagram`, `Construction
    Status`, `Update Documentation`). `Back` returns to the containing folder.
+4. **Construction-task level** (an opted-in Construction Status page is open):
+   `Back` (red) + one link per task at the current hierarchy level. A task with
+   child tasks gets the existing red Excel comment/note corner triangle via
+   `.has-children`; a leaf task does not. Clicking a parent replaces the nav
+   with only its direct children. `Back` moves up one task level, and from the
+   task root returns to the five fixed detail tabs. The content pane shows only
+   the selected task's details, never the expanded hierarchy.
 
 When adding nav behavior, preserve this: never show two levels at once.
+
+## Construction Status task trees
+
+Construction Status pages may become TaskMaster-style drill-down plans without
+adding per-object JavaScript. The page itself is the source of truth:
+
+- Use one hidden root `<ol class="construction-task-tree" hidden>` and a
+  preceding `<section class="construction-task-focus" hidden>` where `app.js`
+  renders the selected task.
+- Every task is a direct list child with `class="construction-task"`, a unique
+  `data-task-id`, a concise `data-task-label` for the sidebar, and a
+  `data-task-status` such as `planned`, `current`, or `done`.
+- Put direct child tasks in `<ol class="construction-task-children">` inside
+  their parent task. Any depth is supported.
+- Do not duplicate task definitions in `app.js`. Its generic parser derives
+  the current sidebar level and `.has-children` triangles from this markup.
+- Keep the definition tree hidden. Navigation is responsible for expanding and
+  collapsing levels; the main pane shows the landing copy or one focused task
+  presentation at a time.
+- A page may opt into the dynamic university-textbook task renderer by adding
+  `construction-textbook-focus` to its focus section. `app.js` then derives the
+  selected lesson title, purpose, status reading, scoped counts, and child/leaf
+  guidance from the same hidden task markup; do not duplicate that information
+  in JavaScript.
+- Set `data-construction-object` on the textbook focus (and normally the hidden
+  tree) so generated lesson editions and footers name the owning Agent Block.
+  The shared textbook presentation lives in `styles.css`; new object plans do
+  not need to duplicate those style rules inside each HTML fragment.
+- Landing pages may expose live totals with `data-construction-count`,
+  `data-construction-completion`, and `data-construction-progress`. The generic
+  renderer calculates them from task statuses whenever Construction Status
+  opens. The full hierarchy must remain hidden even when these summaries are
+  visible.
+- Pages without `.construction-task-tree` retain the ordinary five-tab behavior.
+
+Treat the task hierarchy as a SOLID decomposition, not indentation for its own
+sake. A red-triangle branch is one cohesive workstream. An untagged leaf is one
+small outcome that can be implemented and verified independently. Split a leaf
+again when it still contains multiple responsibilities, multiple unrelated
+kinds of evidence, or work owned by different Agent Blocks. Do not place UI
+state mutation under an agent transport interface merely because both appear in
+the same end-to-end sequence.
+
+Use `voice_communication/conversation_agent/basic_agent_construction_status.html`
+as the working reference.
 
 ## Directory layout mirrors `sections` in app.js
 Each section key in `app.js`'s `sections` object is expected to have a same-named
@@ -131,7 +183,7 @@ regenerate both if the mapped source file changes.
 
 ## Update Documentation tab and source status
 
-The sixth tab loads `basic_agent_update_documentation.html`, then `app.js`
+The fifth detail tab loads `basic_agent_update_documentation.html`, then `app.js`
 fetches relative `api/git-status?item=...` once for the open detail page. Keep
 that URL relative: the SPA also runs behind `/agent-block/` in the main Letta
 dashboard, where `/api/...` would target the wrong server.

@@ -10,6 +10,12 @@ if ( new URLSearchParams( window.location.search ).get( "embedded" ) === "1" ) {
 // Mirrors the directory layout under spa_documentation/. Add new sections
 // and items here as their skeleton folders get built out.
 const sections = {
+  claude_agent_adapter: {
+    label: "Claude Agent Adapter",
+    items: {
+      adapter: { label: "Claude Adapter" },
+    },
+  },
   catherine_agent_sdk: {
     label: "Catherine Agent",
     items: {
@@ -67,6 +73,7 @@ const sections = {
       interfaces: { label: "Main Interface" },
       typescript_contracts: { label: "TypeScript Contracts" },
       pydantic_models: { label: "Pydantic Models" },
+      input_draft: { label: "Input Draft" },
       voice_session: { label: "Voice Session" },
       conversation_agent: { label: "IConversationAgent" },
       spoken_output_policy: { label: "Spoken Output Policy" },
@@ -139,6 +146,13 @@ let currentTop = "home";
 // A resolved node is a *folder* if it has an `items` map (fans out further,
 // mirroring a directory in `tree`), or a *leaf* if it doesn't (has detail tabs).
 let itemPath = [];
+let currentDetail = null;
+
+// Construction Status pages may opt into a TaskMaster-style drill-down by
+// including a semantic .construction-task-tree. null means the normal fixed
+// detail tabs are visible; an array means the task nav is active at that path.
+let constructionTaskPath = null;
+let focusedConstructionTask = null;
 
 // innerHTML does not execute <script> tags, so detail pages that need JS
 // (e.g. mermaid diagrams) would otherwise silently do nothing. Re-create
@@ -156,7 +170,9 @@ function executeScripts( container ) {
 
 async function loadFile( path ) {
   try {
-    const response = await fetch( path );
+    // Documentation changes frequently while the SPA remains open. Always
+    // revalidate the fragment so revisiting an object cannot show stale copy.
+    const response = await fetch( path, { cache: "no-store" } );
     if ( !response.ok ) {
       content.innerHTML = `<p class="placeholder">Not built yet (${response.status}): ${path}</p>`;
       return;
@@ -202,6 +218,271 @@ function hasChildren( node ) {
   return !!node.items && Object.keys( node.items ).length > 0;
 }
 
+function directConstructionTasks( parent ) {
+  const list = Array.from( parent.children ).find( ( child ) =>
+    child.classList?.contains( "construction-task-tree" )
+      || child.classList?.contains( "construction-task-children" )
+  );
+  return list
+    ? Array.from( list.children ).filter( ( child ) => child.matches( "li[data-task-id]" ) )
+    : [];
+}
+
+function resolveConstructionTask( path ) {
+  let parent = content;
+  for ( const taskId of path ) {
+    const task = directConstructionTasks( parent ).find(
+      ( candidate ) => candidate.dataset.taskId === taskId
+    );
+    if ( !task ) return null;
+    parent = task;
+  }
+  return parent;
+}
+
+function constructionTaskRow( task ) {
+  return Array.from( task.children ).find( ( child ) =>
+    child.classList?.contains( "construction-task-row" )
+  ) || null;
+}
+
+function constructionTaskTitle( task ) {
+  return constructionTaskRow( task )?.querySelector( "strong" )?.textContent.trim()
+    || task.dataset.taskLabel
+    || task.dataset.taskId;
+}
+
+function constructionTaskDescription( task ) {
+  return constructionTaskRow( task )?.querySelector( "small" )?.textContent.trim()
+    || "This task does not yet have a plain-language description.";
+}
+
+function constructionStatusCounts( tasks ) {
+  const counts = { total: tasks.length, planned: 0, current: 0, done: 0 };
+  tasks.forEach( ( task ) => {
+    const status = task.dataset.taskStatus || "planned";
+    if ( Object.hasOwn( counts, status ) ) counts[ status ] += 1;
+  } );
+  return counts;
+}
+
+function renderConstructionSummary() {
+  const tree = content.querySelector( ".construction-task-tree" );
+  if ( !tree ) return;
+
+  const counts = constructionStatusCounts(
+    Array.from( tree.querySelectorAll( "li[data-task-id]" ) )
+  );
+  content.querySelectorAll( "[data-construction-count]" ).forEach( ( target ) => {
+    const key = target.dataset.constructionCount;
+    target.textContent = String( counts[ key ] ?? 0 );
+  } );
+
+  const completion = counts.total === 0
+    ? 0
+    : Math.round( counts.done / counts.total * 100 );
+  content.querySelectorAll( "[data-construction-completion]" ).forEach( ( target ) => {
+    target.textContent = `${completion}%`;
+  } );
+  content.querySelectorAll( "[data-construction-progress]" ).forEach( ( target ) => {
+    target.style.width = `${completion}%`;
+  } );
+}
+
+function appendConstructionLessonSection( parent, heading, body ) {
+  const section = document.createElement( "section" );
+  const title = document.createElement( "h2" );
+  title.textContent = heading;
+  section.appendChild( title );
+
+  const paragraph = document.createElement( "p" );
+  paragraph.textContent = body;
+  section.appendChild( paragraph );
+  parent.appendChild( section );
+}
+
+function renderConstructionTextbookTask( focus, task ) {
+  const status = task.dataset.taskStatus || "planned";
+  const children = directConstructionTasks( task );
+  const scopedTasks = [ task, ...Array.from( task.querySelectorAll( "li[data-task-id]" ) ) ];
+  const counts = constructionStatusCounts( scopedTasks );
+  const statusReading = {
+    planned: "The outcome is defined, but implementation evidence has not been recorded yet.",
+    current: "This is active construction work. Its boundary is being reconciled before dependent work proceeds.",
+    done: "This task is marked complete. The status should remain done only while implementation and verification evidence continue to support it.",
+  }[ status ] || "This task uses a project-specific status that should be explained in its source definition.";
+
+  const article = document.createElement( "article" );
+  article.className = "construction-lesson";
+
+  const masthead = document.createElement( "header" );
+  masthead.className = "construction-lesson-masthead";
+  const kicker = document.createElement( "p" );
+  kicker.className = "construction-lesson-kicker";
+  kicker.textContent = "Voice Communication University • Construction Studio";
+  const badge = document.createElement( "span" );
+  badge.className = `construction-lesson-badge status-${status}`;
+  badge.textContent = status;
+  const title = document.createElement( "h1" );
+  title.textContent = constructionTaskTitle( task );
+  const edition = document.createElement( "p" );
+  edition.className = "construction-lesson-edition";
+  const objectName = focus.dataset.constructionObject
+    || content.querySelector( ".construction-task-tree" )?.dataset.constructionObject
+    || "Agent Block";
+  edition.textContent = `${objectName} construction lesson`;
+  masthead.append( kicker, badge, title, edition );
+  article.appendChild( masthead );
+
+  const body = document.createElement( "div" );
+  body.className = "construction-lesson-body";
+
+  const keyIdea = document.createElement( "blockquote" );
+  keyIdea.className = "construction-lesson-callout";
+  const keyLabel = document.createElement( "span" );
+  keyLabel.className = "construction-lesson-callout-label";
+  keyLabel.textContent = "Task purpose";
+  const purpose = document.createElement( "strong" );
+  purpose.textContent = constructionTaskDescription( task );
+  keyIdea.append( keyLabel, purpose );
+  body.appendChild( keyIdea );
+
+  appendConstructionLessonSection( body, "1. Reading the status", statusReading );
+
+  const snapshot = document.createElement( "section" );
+  const snapshotTitle = document.createElement( "h2" );
+  snapshotTitle.textContent = "2. Scope snapshot";
+  const metrics = document.createElement( "div" );
+  metrics.className = "construction-lesson-metrics";
+  [
+    [ "Tasks in scope", counts.total ],
+    [ "Current", counts.current ],
+    [ "Planned", counts.planned ],
+    [ "Done", counts.done ],
+  ].forEach( ( [ labelText, value ] ) => {
+    const metric = document.createElement( "div" );
+    const number = document.createElement( "strong" );
+    number.textContent = String( value );
+    const label = document.createElement( "span" );
+    label.textContent = labelText;
+    metric.append( number, label );
+    metrics.appendChild( metric );
+  } );
+  snapshot.append( snapshotTitle, metrics );
+  body.appendChild( snapshot );
+
+  const continuation = children.length > 0
+    ? `This is an expandable workstream with ${children.length} immediate ${children.length === 1 ? "child task" : "child tasks"}. Use the red-tagged sidebar navigation to study one child at a time; the full tree remains hidden.`
+    : "This is a leaf task: the smallest visible unit in this plan. Move it to done only after its behavior is implemented and focused verification evidence has been recorded.";
+  appendConstructionLessonSection( body, "3. How construction continues", continuation );
+
+  const finalIdea = document.createElement( "blockquote" );
+  finalIdea.className = "construction-lesson-callout principle";
+  const finalLabel = document.createElement( "span" );
+  finalLabel.className = "construction-lesson-callout-label";
+  finalLabel.textContent = "Construction principle";
+  const finalText = document.createElement( "strong" );
+  finalText.textContent = "Status is a claim supported by working behavior and verification evidence—not by the existence of a diagram or placeholder.";
+  finalIdea.append( finalLabel, finalText );
+  body.appendChild( finalIdea );
+  article.appendChild( body );
+
+  const footer = document.createElement( "footer" );
+  footer.className = "construction-lesson-footer";
+  footer.textContent = `Voice Communication University • ${objectName} Construction Status`;
+  article.appendChild( footer );
+  focus.appendChild( article );
+}
+
+function renderConstructionTaskContent( task ) {
+  const focus = content.querySelector( ".construction-task-focus" );
+  if ( !focus ) return;
+
+  const intro = content.querySelector( ".construction-plan-intro" );
+  if ( intro ) intro.hidden = Boolean( task );
+
+  focus.replaceChildren();
+  if ( !task ) {
+    focus.hidden = true;
+    delete focus.dataset.taskStatus;
+    return;
+  }
+
+  focus.hidden = false;
+  focus.dataset.taskStatus = task.dataset.taskStatus || "planned";
+
+  if ( focus.classList.contains( "construction-textbook-focus" ) ) {
+    renderConstructionTextbookTask( focus, task );
+    return;
+  }
+
+  const label = document.createElement( "p" );
+  label.className = "construction-task-focus-label";
+  label.textContent = "Selected task";
+  focus.appendChild( label );
+
+  const row = constructionTaskRow( task );
+  if ( row ) focus.appendChild( row.cloneNode( true ) );
+
+  if ( directConstructionTasks( task ).length > 0 ) {
+    const hint = document.createElement( "p" );
+    hint.className = "placeholder construction-task-focus-hint";
+    hint.textContent = "Choose a child task in the sidebar, or use Back to collapse this task.";
+    focus.appendChild( hint );
+  }
+}
+
+function selectConstructionTask( task ) {
+  focusedConstructionTask = task.dataset.taskId;
+  renderConstructionTaskContent( task );
+  if ( directConstructionTasks( task ).length > 0 ) {
+    constructionTaskPath.push( task.dataset.taskId );
+  }
+  renderNav();
+}
+
+function goUpConstructionTasks() {
+  if ( constructionTaskPath.length === 0 ) {
+    constructionTaskPath = null;
+    focusedConstructionTask = null;
+    renderConstructionTaskContent( null );
+    renderNav();
+    return;
+  }
+
+  focusedConstructionTask = constructionTaskPath.pop();
+  renderConstructionTaskContent( resolveConstructionTask( [
+    ...constructionTaskPath,
+    focusedConstructionTask,
+  ] ) );
+  renderNav();
+}
+
+function renderConstructionTaskNav() {
+  const parent = resolveConstructionTask( constructionTaskPath );
+  if ( !parent ) {
+    constructionTaskPath = null;
+    renderNav();
+    return;
+  }
+
+  addLink( { text: "Back", className: "back", onClick: () => goUpConstructionTasks() } );
+  directConstructionTasks( parent ).forEach( ( task ) => {
+    const children = directConstructionTasks( task );
+    addLink( {
+      text: task.dataset.taskLabel || task.dataset.taskId,
+      active: task.dataset.taskId === focusedConstructionTask,
+      className: children.length > 0 ? "has-children" : undefined,
+      onClick: () => selectConstructionTask( task ),
+    } );
+  } );
+}
+
+function resetConstructionTaskNav() {
+  constructionTaskPath = null;
+  focusedConstructionTask = null;
+}
+
 function renderNav() {
   nav.innerHTML = "";
 
@@ -237,6 +518,15 @@ function renderNav() {
     return;
   }
 
+  if (
+    currentDetail === "status"
+    && constructionTaskPath !== null
+    && content.querySelector( ".construction-task-tree" )
+  ) {
+    renderConstructionTaskNav();
+    return;
+  }
+
   // Leaf item: fixed detail tabs.
   addLink( { text: "Back", className: "back", onClick: () => goUp() } );
   detailTabs.forEach( ( tab ) => {
@@ -247,8 +537,6 @@ function renderNav() {
     } );
   } );
 }
-
-let currentDetail = null;
 
 // Folder-level overview: "<top>/.../_overview.html", sibling of the folder's
 // item subfolders. Optional -- a missing/empty one just falls back to the
@@ -269,7 +557,10 @@ async function showCurrentContent() {
 
   const chooseMsg = `${heading}<p class="placeholder">Choose an item above.</p>`;
   try {
-    const response = await fetch( [ currentTop, ...itemPath, "_overview.html" ].join( "/" ) );
+    const response = await fetch(
+      [ currentTop, ...itemPath, "_overview.html" ].join( "/" ),
+      { cache: "no-store" },
+    );
     if ( response.ok ) {
       const html = await response.text();
       content.innerHTML = html.trim() ? `${heading}${html}` : chooseMsg;
@@ -286,6 +577,7 @@ function goHome() {
   currentTop = "home";
   itemPath = [];
   currentDetail = null;
+  resetConstructionTaskNav();
   renderNav();
   loadFile( "home_claude_md.html" );
 }
@@ -294,6 +586,7 @@ function selectSection( top ) {
   currentTop = top;
   itemPath = [];
   currentDetail = null;
+  resetConstructionTaskNav();
   renderNav();
   showCurrentContent();
 }
@@ -301,6 +594,7 @@ function selectSection( top ) {
 function selectNode( key ) {
   itemPath.push( key );
   currentDetail = null;
+  resetConstructionTaskNav();
   renderNav();
   showCurrentContent();
 }
@@ -312,6 +606,7 @@ function goUp() {
   }
   itemPath.pop();
   currentDetail = null;
+  resetConstructionTaskNav();
   renderNav();
   showCurrentContent();
 }
@@ -451,8 +746,19 @@ function pollUpdateRun( item, btn, logBox ) {
 
 function selectDetail( tab ) {
   currentDetail = tab.key;
+  resetConstructionTaskNav();
   renderNav();
-  loadFile( filePath( tab.file ) ).then( () => refreshGitStatus() );
+  const selectedItem = itemKey();
+  loadFile( filePath( tab.file ) ).then( () => {
+    if ( currentDetail !== tab.key || itemKey() !== selectedItem ) return;
+    if ( tab.key === "status" && content.querySelector( ".construction-task-tree" ) ) {
+      constructionTaskPath = [];
+      renderConstructionSummary();
+      renderConstructionTaskContent( null );
+      renderNav();
+    }
+    refreshGitStatus();
+  } );
 }
 
 goHome();

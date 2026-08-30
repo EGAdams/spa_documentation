@@ -1,5 +1,461 @@
-<h1>Construction Status</h1>
-<p><strong>Reference diagrams imported.</strong> These describe the existing dashboard design and are not completion evidence for this new Agent Block.</p>
-<p><strong>Skeleton</strong> — interface and Agent Block pages exist; production behavior has not been implemented.</p>
-<p>Planned construction step: 1.</p>
-<p class="placeholder">Activate this block before adding implementation, diagrams, or completion evidence.</p>
+<style>
+.construction-textbook-page,
+.construction-lesson {
+  --status-ink: #172033;
+  --status-muted: #5f6b7a;
+  --status-navy: #17365d;
+  --status-blue: #295f9e;
+  --status-gold: #b58b36;
+  --status-line: #d9dee7;
+  --status-paper: #fbfaf7;
+  max-width: 960px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid #d7dce4;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .98);
+  box-shadow: 0 18px 45px rgba(17, 32, 52, .12);
+  color: var(--status-ink);
+  font: 17px/1.72 Georgia, "Times New Roman", serif;
+}
+.construction-plan-intro.construction-textbook-intro,
+.construction-task-focus.construction-textbook-focus {
+  max-width: 960px;
+  margin: 0 auto;
+}
+.construction-textbook-page *,
+.construction-lesson * {
+  box-sizing: border-box;
+}
+.construction-status-masthead,
+.construction-lesson-masthead {
+  display: block;
+  position: relative;
+  top: auto;
+  left: auto;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  padding: 52px 62px 46px;
+  background: linear-gradient(135deg, #122a4b 0%, #1b4678 68%, #295f9e 100%);
+  color: white;
+}
+.construction-status-masthead::after,
+.construction-lesson-masthead::after {
+  content: "";
+  position: absolute;
+  bottom: 26px;
+  left: 62px;
+  width: 110px;
+  height: 4px;
+  background: var(--status-gold);
+}
+.construction-status-kicker,
+.construction-lesson-kicker {
+  margin: 0 0 12px;
+  opacity: .8;
+  font: .76rem/1.4 Arial, Helvetica, sans-serif;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+.construction-status-badge,
+.construction-lesson-badge {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: var(--status-gold);
+  color: white;
+  font: 700 .72rem/1.2 Arial, Helvetica, sans-serif;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.construction-lesson-badge.status-current {
+  background: #4c6ef5;
+}
+.construction-lesson-badge.status-done {
+  background: #2b8a3e;
+}
+.construction-status-masthead h1,
+.construction-lesson-masthead h1 {
+  margin: 0 0 10px;
+  border: 0;
+  color: white;
+  font-size: clamp(2.1rem, 6vw, 3.8rem);
+  line-height: 1.06;
+  letter-spacing: -.025em;
+}
+.construction-status-edition,
+.construction-lesson-edition {
+  margin: 0;
+  opacity: .9;
+  font-size: 1.15rem;
+}
+.construction-status-body,
+.construction-lesson-body {
+  padding: 40px 62px 56px;
+}
+.construction-textbook-page h2,
+.construction-lesson h2 {
+  margin: 2.1em 0 .75em;
+  padding-bottom: .38em;
+  border-bottom: 2px solid var(--status-navy);
+  color: var(--status-navy);
+  font: 700 1.75rem/1.2 Georgia, "Times New Roman", serif;
+}
+.construction-textbook-page h2:first-child,
+.construction-lesson h2:first-child {
+  margin-top: 0;
+}
+.construction-textbook-page p,
+.construction-lesson p {
+  margin: .85em 0;
+}
+.construction-status-callout,
+.construction-lesson-callout {
+  margin: 1.5em 0;
+  padding: 20px 24px;
+  border-left: 5px solid var(--status-navy);
+  border-radius: 0 8px 8px 0;
+  background: #eaf2fb;
+  font-size: 1.05rem;
+}
+.construction-status-callout.principle,
+.construction-lesson-callout.principle {
+  border-left-color: var(--status-gold);
+  background: #f8f2e4;
+}
+.construction-status-callout-label,
+.construction-lesson-callout-label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--status-muted);
+  font: 700 .72rem/1.3 Arial, Helvetica, sans-serif;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.construction-status-metrics,
+.construction-lesson-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin: 1.4em 0;
+}
+.construction-lesson-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.construction-status-metrics > div,
+.construction-lesson-metrics > div {
+  padding: 15px 10px;
+  border: 1px solid var(--status-line);
+  border-radius: 8px;
+  background: #f8fafc;
+  text-align: center;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.construction-status-metrics strong,
+.construction-lesson-metrics strong {
+  display: block;
+  color: var(--status-navy);
+  font-size: 1.7rem;
+  line-height: 1.1;
+}
+.construction-status-metrics span,
+.construction-lesson-metrics span {
+  display: block;
+  margin-top: 5px;
+  color: var(--status-muted);
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.construction-progress-track {
+  height: 12px;
+  margin: 1em 0 .4em;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e5e9ef;
+}
+.construction-progress-bar {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--status-gold), #d8ad4c);
+  transition: width 180ms ease;
+}
+.construction-progress-caption {
+  color: var(--status-muted);
+  font: .8rem/1.4 Arial, Helvetica, sans-serif;
+}
+.construction-status-table-wrap {
+  margin: 1.35em 0 1.8em;
+  overflow-x: auto;
+  border: 1px solid var(--status-line);
+  border-radius: 8px;
+}
+.construction-status-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  font: .9rem/1.5 Arial, Helvetica, sans-serif;
+}
+.construction-status-table th {
+  padding: 11px 13px;
+  background: var(--status-navy);
+  color: white;
+  text-align: left;
+}
+.construction-status-table td {
+  padding: 11px 13px;
+  border-top: 1px solid var(--status-line);
+  vertical-align: top;
+}
+.construction-status-table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+.construction-status-footer,
+.construction-lesson-footer {
+  padding: 23px 32px 30px;
+  border-top: 1px solid var(--status-line);
+  background: #fafbfc;
+  color: var(--status-muted);
+  font: .8rem/1.4 Arial, Helvetica, sans-serif;
+  text-align: center;
+}
+@media (max-width: 900px) {
+  .construction-status-metrics,
+  .construction-lesson-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .construction-textbook-page,
+  .construction-lesson {
+    border-radius: 0;
+  }
+  .construction-status-masthead,
+  .construction-lesson-masthead,
+  .construction-status-body,
+  .construction-lesson-body {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .construction-status-masthead::after,
+  .construction-lesson-masthead::after {
+    left: 24px;
+  }
+}
+</style>
+
+<div class="construction-plan-intro construction-textbook-intro">
+  <article class="construction-textbook-page">
+    <header class="construction-status-masthead">
+      <p class="construction-status-kicker">Short University Text • Construction Studio</p>
+      <span class="construction-status-badge">Live Plan</span>
+      <h1>Building the IConversationAgent</h1>
+      <p class="construction-status-edition">A dynamic reading of what exists, what is active, and what remains</p>
+    </header>
+
+    <div class="construction-status-body">
+      <h2>1. Construction status is an evidence claim</h2>
+      <p>A construction plan is not merely a list of intentions. Each status makes a claim about the evidence currently available for an Agent Block.</p>
+      <blockquote class="construction-status-callout">
+        <span class="construction-status-callout-label">Key Idea</span>
+        <strong>The IConversationAgent has a typed design boundary today, but Toyota adoption and the Pipecat-backed voice slice remain unfinished.</strong>
+      </blockquote>
+
+      <div class="construction-status-metrics" aria-label="Live construction status summary">
+        <div><strong data-construction-count="total">0</strong><span>Total tasks</span></div>
+        <div><strong data-construction-count="current">0</strong><span>Current</span></div>
+        <div><strong data-construction-count="planned">0</strong><span>Planned</span></div>
+        <div><strong data-construction-count="done">0</strong><span>Done</span></div>
+        <div><strong data-construction-completion>0%</strong><span>Complete</span></div>
+      </div>
+      <div class="construction-progress-track" aria-hidden="true">
+        <div class="construction-progress-bar" data-construction-progress></div>
+      </div>
+      <p class="construction-progress-caption">The values above are calculated from the hidden task definitions whenever this page opens.</p>
+
+      <h2>2. What exists now</h2>
+      <p>The repository contains a narrow TypeScript interface with one operation: <code>submit( text, generation )</code>. It returns an asynchronous stream of normalized <code>AgentEvent</code> values. Shared event shapes and reference diagrams also exist.</p>
+      <p>That is meaningful design evidence: the dependency boundary has a name, a location, and a typed contract. It is not yet production-adoption evidence.</p>
+
+      <h2>3. What remains to be constructed</h2>
+      <div class="construction-status-table-wrap">
+        <table class="construction-status-table">
+          <thead><tr><th>Area</th><th>Construction question</th><th>Evidence required</th></tr></thead>
+          <tbody>
+            <tr><td>Contract</td><td>Does the interface represent Toyota’s real request lifecycle?</td><td>Reconciled types, emitted-event rules, cancellation decision, and contract tests.</td></tr>
+            <tr><td>Toyota adoption</td><td>Does Input Options depend on the port instead of a direct request?</td><td>Injected adapter, preserved timeout/resume behavior, and focused UI tests.</td></tr>
+            <tr><td>Boundary handoff</td><td>Does the port leave UI state outside the agent abstraction?</td><td>Input clearing is delegated to Input Draft and Conversation Coordinator; the agent receives an immutable snapshot.</td></tr>
+            <tr><td>Voice slice</td><td>Can one complete Pipecat-backed turn run end to end?</td><td>Passing interface tests and a verified live browser flow.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>4. How to study the plan</h2>
+      <p>The sidebar shows only one level at a time. A red Excel-style corner means the task opens into smaller work. Choosing a task replaces this chapter with a dynamically generated lesson about that task. The complete hierarchy remains hidden.</p>
+      <blockquote class="construction-status-callout principle">
+        <span class="construction-status-callout-label">Construction Principle</span>
+        <strong>Move one narrow boundary from planned, to active, to verified. Then let the evidence—not optimism—change its status to done.</strong>
+      </blockquote>
+    </div>
+
+    <footer class="construction-status-footer">Voice Communication University • IConversationAgent • Dynamic Construction Status</footer>
+  </article>
+</div>
+
+<section class="construction-task-focus construction-textbook-focus" data-construction-object="IConversationAgent" aria-live="polite" hidden></section>
+
+<ol class="construction-task-tree" aria-label="IConversationAgent construction tasks" hidden>
+  <li class="construction-task" data-task-id="task-1" data-task-label="Reconcile Contract" data-task-status="planned">
+    <div class="construction-task-row">
+      <span class="construction-task-box" aria-hidden="true"></span>
+      <span class="construction-task-copy">
+        <strong>Reconcile the IConversationAgent contract</strong>
+        <small>Make the Agent Block contract match the lifecycle Toyota must actually consume.</small>
+      </span>
+      <span class="construction-task-status">Planned</span>
+    </div>
+    <ol class="construction-task-children">
+      <li class="construction-task" data-task-id="task-1a" data-task-label="Align Generation Identifiers" data-task-status="planned">
+        <div class="construction-task-row">
+          <span class="construction-task-box" aria-hidden="true"></span>
+          <span class="construction-task-copy">
+            <strong>Align generation identifiers</strong>
+            <small>Resolve the number-versus-string mismatch between the block contract and Toyota's existing conversation implementation.</small>
+          </span>
+          <span class="construction-task-status">Planned</span>
+        </div>
+      </li>
+      <li class="construction-task" data-task-id="task-1b" data-task-label="Complete Request Lifecycle" data-task-status="planned">
+        <div class="construction-task-row">
+          <span class="construction-task-box" aria-hidden="true"></span>
+          <span class="construction-task-copy">
+            <strong>Complete the request lifecycle</strong>
+            <small>Define the minimum submission, streaming, completion, error, and cancellation behavior.</small>
+          </span>
+          <span class="construction-task-status">Planned</span>
+        </div>
+        <ol class="construction-task-children">
+          <li class="construction-task" data-task-id="task-1b-1" data-task-label="Specify Emitted Events" data-task-status="planned">
+            <div class="construction-task-row">
+              <span class="construction-task-box" aria-hidden="true"></span>
+              <span class="construction-task-copy">
+                <strong>Specify emitted events</strong>
+                <small>Capture the event vocabulary and ordering that downstream UI and voice blocks can rely on.</small>
+              </span>
+              <span class="construction-task-status">Planned</span>
+            </div>
+          </li>
+          <li class="construction-task" data-task-id="task-1b-2" data-task-label="Specify Cancellation" data-task-status="planned">
+            <div class="construction-task-row">
+              <span class="construction-task-box" aria-hidden="true"></span>
+              <span class="construction-task-copy">
+                <strong>Specify cancellation</strong>
+                <small>Decide whether cancellation belongs on IConversationAgent or a separate lifecycle interface.</small>
+              </span>
+              <span class="construction-task-status">Planned</span>
+            </div>
+          </li>
+        </ol>
+      </li>
+      <li class="construction-task" data-task-id="task-1c" data-task-label="Add Contract Tests" data-task-status="planned">
+        <div class="construction-task-row">
+          <span class="construction-task-box" aria-hidden="true"></span>
+          <span class="construction-task-copy">
+            <strong>Add contract tests</strong>
+            <small>Prove adapters can satisfy the shared contract without importing Toyota UI details.</small>
+          </span>
+          <span class="construction-task-status">Planned</span>
+        </div>
+      </li>
+    </ol>
+  </li>
+
+  <li class="construction-task" data-task-id="task-2" data-task-label="Adopt in Toyota" data-task-status="planned">
+    <div class="construction-task-row">
+      <span class="construction-task-box" aria-hidden="true"></span>
+      <span class="construction-task-copy">
+        <strong>Adopt the contract in Toyota Input Options</strong>
+        <small>Move the interface behind an injected adapter while preserving existing conversation behavior.</small>
+      </span>
+      <span class="construction-task-status">Planned</span>
+    </div>
+    <ol class="construction-task-children">
+      <li class="construction-task" data-task-id="task-2a" data-task-label="Inject Conversation Adapter" data-task-status="planned">
+        <div class="construction-task-row">
+          <span class="construction-task-box" aria-hidden="true"></span>
+          <span class="construction-task-copy">
+            <strong>Inject the conversation adapter</strong>
+            <small>Construct IConversationAgent at Toyota's outer composition boundary.</small>
+          </span>
+          <span class="construction-task-status">Planned</span>
+        </div>
+      </li>
+      <li class="construction-task" data-task-id="task-2b" data-task-label="Replace Direct Request" data-task-status="planned">
+        <div class="construction-task-row">
+          <span class="construction-task-box" aria-hidden="true"></span>
+          <span class="construction-task-copy">
+            <strong>Replace the direct request</strong>
+            <small>Route Input Options conversation work through the interface without losing resume or timeout behavior.</small>
+          </span>
+          <span class="construction-task-status">Planned</span>
+        </div>
+      </li>
+      <li class="construction-task" data-task-id="task-2c" data-task-label="Preserve Send Semantics" data-task-status="planned">
+        <div class="construction-task-row">
+          <span class="construction-task-box" aria-hidden="true"></span>
+          <span class="construction-task-copy">
+            <strong>Preserve the send contract</strong>
+            <small>Submit an immutable text snapshot and emit normalized events; input clearing remains the Input Draft and coordinator's responsibility.</small>
+          </span>
+          <span class="construction-task-status">Planned</span>
+        </div>
+      </li>
+    </ol>
+  </li>
+
+  <li class="construction-task" data-task-id="task-3" data-task-label="Verify Voice Slice" data-task-status="planned">
+    <div class="construction-task-row">
+      <span class="construction-task-box" aria-hidden="true"></span>
+      <span class="construction-task-copy">
+        <strong>Verify the Pipecat voice slice</strong>
+        <small>Prove one end-to-end path before adding the remaining Voice Communication blocks.</small>
+      </span>
+      <span class="construction-task-status">Planned</span>
+    </div>
+    <ol class="construction-task-children">
+      <li class="construction-task" data-task-id="task-3a" data-task-label="Run Focused Tests" data-task-status="planned">
+        <div class="construction-task-row">
+          <span class="construction-task-box" aria-hidden="true"></span>
+          <span class="construction-task-copy">
+            <strong>Run focused interface and UI tests</strong>
+            <small>Split contract verification into one independently diagnosable outcome per behavior.</small>
+          </span>
+          <span class="construction-task-status">Planned</span>
+        </div>
+        <ol class="construction-task-children">
+          <li class="construction-task" data-task-id="task-3a-events" data-task-label="Test Event Vocabulary" data-task-status="planned"><div class="construction-task-row"><span class="construction-task-box"></span><span class="construction-task-copy"><strong>Test the event vocabulary</strong><small>Assert supported kinds are admitted and unknown kinds fail closed.</small></span><span class="construction-task-status">Planned</span></div></li>
+          <li class="construction-task" data-task-id="task-3a-order" data-task-label="Test Event Ordering" data-task-status="planned"><div class="construction-task-row"><span class="construction-task-box"></span><span class="construction-task-copy"><strong>Test event ordering</strong><small>Assert the adapter's event sequence satisfies the port's documented lifecycle.</small></span><span class="construction-task-status">Planned</span></div></li>
+          <li class="construction-task" data-task-id="task-3a-cancel" data-task-label="Test Cancellation" data-task-status="planned"><div class="construction-task-row"><span class="construction-task-box"></span><span class="construction-task-copy"><strong>Test cancellation</strong><small>Assert a cancelled generation produces no further consumer-visible events.</small></span><span class="construction-task-status">Planned</span></div></li>
+        </ol>
+      </li>
+      <li class="construction-task" data-task-id="task-3b" data-task-label="Verify Live Browser Flow" data-task-status="planned">
+        <div class="construction-task-row">
+          <span class="construction-task-box" aria-hidden="true"></span>
+          <span class="construction-task-copy">
+            <strong>Verify the live browser flow</strong>
+            <small>Record one browser observation for each adapter path that claims this port.</small>
+          </span>
+          <span class="construction-task-status">Planned</span>
+        </div>
+        <ol class="construction-task-children">
+          <li class="construction-task" data-task-id="task-3b-letta" data-task-label="Verify Letta Submission" data-task-status="planned"><div class="construction-task-row"><span class="construction-task-box"></span><span class="construction-task-copy"><strong>Verify Letta submission</strong><small>Confirm Toyota renders normalized reply events after submitting through the Letta adapter.</small></span><span class="construction-task-status">Planned</span></div></li>
+          <li class="construction-task" data-task-id="task-3b-pipecat" data-task-label="Verify Pipecat Compatibility" data-task-status="planned"><div class="construction-task-row"><span class="construction-task-box"></span><span class="construction-task-copy"><strong>Verify Pipecat compatibility</strong><small>Confirm a Pipecat-backed turn can produce the same normalized event contract.</small></span><span class="construction-task-status">Planned</span></div></li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+</ol>
