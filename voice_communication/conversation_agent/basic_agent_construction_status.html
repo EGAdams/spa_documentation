@@ -253,8 +253,8 @@
 
 <section>
 <h2>One turn through it</h2>
-<p>Figure 1 is the arrangement; this is the motion. Today only steps 5&ndash;11 have ever run, and only in Python.</p>
-<div class="mermaid-figure" data-diagram="figure-2">
+<p>Figure 1 is the arrangement; this is the motion. The Python adapter proves the adapter/backend half; the browser screen and turn lifecycle remain unwired.</p>
+<div class="mermaid-figure" data-diagram="figure-2" id="figure-2">
 <div class="diagram-toolbar">
 <span class="diagram-title">Figure 2 &mdash; One turn through the plug-in point</span>
 <span class="diagram-hint">Wheel: zoom &bull; Drag: pan &bull; Shift+wheel: horizontal pan &bull; Double-click: reset</span>
@@ -270,25 +270,26 @@
     participant Adapter as An adapter (Letta, Claude, Pipecat)
     participant Backend as Agent backend
 
-    User-&gt;&gt;Screen: types or speaks "where were we?"
-    Screen-&gt;&gt;Screen: choose generation = 7
-    Screen-&gt;&gt;Iface: submit("where were we?", 7)
-    Note over Screen,Iface: The screen holds the interface type only. It never learns which adapter it is holding.
+    User-&gt;&gt;Screen: asks "Summarize our adapter plan"
+    Screen-&gt;&gt;Screen: beginTurn() returns generation 2
+    Note over Screen: Generation 2 means "the current turn".&lt;br/&gt;Events from the interrupted generation 1 are now stale.
+    Screen-&gt;&gt;Iface: submit("Summarize our adapter plan", generation 2)
+    Note over Screen,Iface: The screen holds the interface type only.&lt;br/&gt;It never learns which adapter it is holding.
     Iface-&gt;&gt;Adapter: the call lands on whatever was injected
     Adapter-&gt;&gt;Backend: vendor request (SDK, HTTP, websocket)
     Backend--&gt;&gt;Adapter: vendor messages, in the vendor's own shape
-    Adapter--&gt;&gt;Screen: AgentEvent(assistant_text, generation 7)
-    Adapter--&gt;&gt;Screen: AgentEvent(assistant_text, generation 7)
+    Adapter--&gt;&gt;Screen: assistant_text: "We agreed to use one interface"
+    Adapter--&gt;&gt;Screen: assistant_text: "with swappable adapters."
     Note over Adapter,Screen: Translation happens here and nowhere else. Only the five agreed kinds cross this line.
-    Adapter--&gt;&gt;Screen: AgentEvent(terminal, generation 7)
+    Adapter--&gt;&gt;Screen: terminal: generation 2 is complete
     Screen-&gt;&gt;User: renders the reply, then closes the turn</pre>
 </div>
 </div>
 </div>
-<p class="subtitle"><strong>Figure 2.</strong> Vendor message shapes stop at the adapter. Only <code>AgentEvent</code> values cross back to the screen.</p>
+<p class="subtitle"><strong>Figure 2.</strong> Here <code>generation</code> is a current-turn token, not a model version: when turn 2 begins, late events from interrupted turn 1 can be ignored. Vendor message shapes stop at the adapter, and only <code>AgentEvent</code> values cross back to the screen.</p>
 <ul>
 <li><strong>Step 3 is the point of the whole file.</strong> The screen writes one line and never learns which adapter it holds; that is chosen at the composition root.</li>
-<li><strong>Steps 8&ndash;11 are the translation seam.</strong> Vendor messages go in on the left of the adapter; only the five agreed kinds come out on the right.</li>
+<li><strong>Steps 6&ndash;9 are the translation seam.</strong> A vendor message arrives at the adapter; two distinct normalized text chunks and a terminal event come out.</li>
 </ul>
 </section>
 
