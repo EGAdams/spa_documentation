@@ -168,6 +168,120 @@ function executeScripts( container ) {
   } );
 }
 
+// Mermaid figures inside an authored lesson. This used to be an inline
+// <script> in every lesson page; it lives here so the pages stay short and
+// only one copy has to be kept correct.
+const MERMAID_THEME = {
+  startOnLoad: false, securityLevel: "loose", theme: "base",
+  themeVariables: {
+    lineColor: "#b58b36", primaryColor: "#17365d", primaryTextColor: "#ffffff",
+    primaryBorderColor: "#0d2744", secondaryColor: "#eaf2fb", tertiaryColor: "#f8f2e4",
+    // Sequence message text sits on the page background and needs dark ink;
+    // class-diagram labels sit inside the navy boxes and need light ink. They
+    // are two different variables for exactly that reason.
+    textColor: "#172033", classText: "#ffffff",
+    actorBkg: "#17365d", actorBorder: "#0d2744", actorTextColor: "#ffffff",
+    actorLineColor: "#8fa2ba", signalColor: "#17365d", signalTextColor: "#172033",
+    sequenceNumberColor: "#ffffff", noteBkgColor: "#f8f2e4", noteBorderColor: "#b58b36",
+    noteTextColor: "#172033", labelBoxBkgColor: "#eaf2fb", labelTextColor: "#172033",
+  },
+};
+
+// Vendored, and deliberately relative: this SPA is also served under a
+// reverse-proxy subpath, where "/vendor/..." would resolve against the
+// proxy's own root and 404.
+function ensureMermaidLoaded() {
+  if ( window.mermaid ) return Promise.resolve();
+  if ( !window.__mermaidLoading ) {
+    window.__mermaidLoading = new Promise( ( resolve, reject ) => {
+      const script = document.createElement( "script" );
+      script.src = "vendor/mermaid.min.js";
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild( script );
+    } );
+  }
+  return window.__mermaidLoading;
+}
+
+function wireDiagramPanZoom( figure ) {
+  const viewport = figure.querySelector( ".mermaid-viewport" );
+  const canvas = figure.querySelector( ".mermaid-canvas" );
+  let scale = 1, x = 0, y = 0, dragging = false, startX = 0, startY = 0;
+  const apply = () => { canvas.style.transform = `translate(${x}px, ${y}px) scale(${scale})`; };
+  const reset = () => { scale = 1; x = 0; y = 0; apply(); };
+  const zoomAt = ( clientX, clientY, factor ) => {
+    const rect = viewport.getBoundingClientRect();
+    const px = clientX - rect.left, py = clientY - rect.top;
+    const next = Math.min( 4, Math.max( 0.3, scale * factor ));
+    if ( next === scale ) return;
+    x = px - ( px - x ) * ( next / scale );
+    y = py - ( py - y ) * ( next / scale );
+    scale = next;
+    apply();
+  };
+  viewport.addEventListener( "wheel", ( event ) => {
+    event.preventDefault();
+    if ( event.shiftKey ) { x -= event.deltaY; apply(); return; }
+    zoomAt( event.clientX, event.clientY, Math.exp( -event.deltaY * 0.0015 ));
+  }, { passive: false } );
+  viewport.addEventListener( "pointerdown", ( event ) => {
+    dragging = true;
+    startX = event.clientX - x;
+    startY = event.clientY - y;
+    viewport.classList.add( "dragging" );
+    viewport.setPointerCapture( event.pointerId );
+  } );
+  viewport.addEventListener( "pointermove", ( event ) => {
+    if ( !dragging ) return;
+    x = event.clientX - startX;
+    y = event.clientY - startY;
+    apply();
+  } );
+  const stop = ( event ) => {
+    dragging = false;
+    viewport.classList.remove( "dragging" );
+    if ( viewport.hasPointerCapture?.( event.pointerId )) viewport.releasePointerCapture( event.pointerId );
+  };
+  viewport.addEventListener( "pointerup", stop );
+  viewport.addEventListener( "pointercancel", stop );
+  viewport.addEventListener( "dblclick", reset );
+  figure.querySelectorAll( ".diagram-controls button" ).forEach( ( button ) => {
+    button.addEventListener( "click", () => {
+      const rect = viewport.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+      if ( button.dataset.action === "in" ) zoomAt( cx, cy, 1.25 );
+      else if ( button.dataset.action === "out" ) zoomAt( cx, cy, 0.8 );
+      else reset();
+    } );
+  } );
+}
+
+function renderLessonDiagrams( container ) {
+  const figures = Array.from( container.querySelectorAll( ".mermaid-figure" ) );
+  if ( figures.length === 0 ) return;
+  ensureMermaidLoaded().then( async () => {
+    window.mermaid.initialize( MERMAID_THEME );
+    for ( const figure of figures ) {
+      const source = figure.querySelector( "pre.mermaid" );
+      if ( !source || source.dataset.rendered === "1" ) continue;
+      const definition = source.innerHTML
+        .replace( /&lt;/g, "<" ).replace( /&gt;/g, ">" ).replace( /&quot;/g, '"' )
+        .replace( /&#39;/g, "'" ).replace( /&nbsp;/g, " " ).replace( /&amp;/g, "&" );
+      // Unique per render: the same page can be reopened many times per session.
+      const id = "mmd-" + figure.dataset.diagram + "-" + Date.now() + "-" + Math.floor( Math.random() * 1e6 );
+      const { svg } = await window.mermaid.render( id, definition );
+      figure.querySelector( ".mermaid-canvas" ).innerHTML = svg;
+      source.dataset.rendered = "1";
+      wireDiagramPanZoom( figure );
+    }
+  } ).catch( ( error ) => {
+    figures.forEach( ( figure ) => {
+      figure.querySelector( ".mermaid-canvas" ).textContent = "Diagram could not be rendered: " + error.message;
+    } );
+  } );
+}
+
 async function loadFile( path ) {
   try {
     // Documentation changes frequently while the SPA remains open. Always
@@ -257,6 +371,49 @@ function constructionTaskDescription( task ) {
     || "This task does not yet have a plain-language description.";
 }
 
+function constructionTaskLesson( task ) {
+  return Array.from( task.children ).find( ( child ) =>
+    child.classList?.contains( "construction-task-lesson" )
+  ) || null;
+}
+
+function constructionTaskAncestors( task ) {
+  const chain = [];
+  let parent = task.parentElement?.closest( "li[data-task-id]" ) || null;
+  while ( parent ) {
+    chain.unshift( parent );
+    parent = parent.parentElement?.closest( "li[data-task-id]" ) || null;
+  }
+  return chain;
+}
+
+function constructionTaskSiblings( task ) {
+  const parent = task.parentElement?.closest( "li[data-task-id]" ) || content;
+  const siblings = directConstructionTasks( parent );
+  return siblings.length > 0 ? siblings : [ task ];
+}
+
+function constructionStatusWord( status ) {
+  return {
+    planned: "Not started",
+    current: "In progress",
+    done: "Done",
+  }[ status ] || status;
+}
+
+function constructionTrailSentence( task ) {
+  return [ ...constructionTaskAncestors( task ), task ]
+    .map( ( node, depth ) => {
+      const siblings = constructionTaskSiblings( node );
+      const unit = depth === 0 ? "Stage" : "Step";
+      const position = siblings.indexOf( node ) + 1;
+      const title = constructionTaskTitle( node )
+        .replace( /^(Stage|Step)\s+\d+\s*[\u2014\u2013-]\s*/, "" );
+      return `${unit} ${position} of ${siblings.length} \u2014 ${title}`;
+    } )
+    .join( "  \u203a  " );
+}
+
 function constructionStatusCounts( tasks ) {
   const counts = { total: tasks.length, planned: 0, current: 0, done: 0 };
   tasks.forEach( ( task ) => {
@@ -301,63 +458,66 @@ function appendConstructionLessonSection( parent, heading, body ) {
   parent.appendChild( section );
 }
 
-function renderConstructionTextbookTask( focus, task ) {
-  const status = task.dataset.taskStatus || "planned";
-  const children = directConstructionTasks( task );
-  const scopedTasks = [ task, ...Array.from( task.querySelectorAll( "li[data-task-id]" ) ) ];
-  const counts = constructionStatusCounts( scopedTasks );
-  const statusReading = {
-    planned: "The outcome is defined, but implementation evidence has not been recorded yet.",
-    current: "This is active construction work. Its boundary is being reconciled before dependent work proceeds.",
-    done: "This task is marked complete. The status should remain done only while implementation and verification evidence continue to support it.",
-  }[ status ] || "This task uses a project-specific status that should be explained in its source definition.";
+function appendConstructionChildRoster( parent, children ) {
+  const wrap = document.createElement( "div" );
+  wrap.className = "construction-status-table-wrap";
+  const table = document.createElement( "table" );
+  table.className = "construction-status-table";
 
-  const article = document.createElement( "article" );
-  article.className = "construction-lesson";
+  const head = document.createElement( "thead" );
+  const headRow = document.createElement( "tr" );
+  [ "Step", "Work item", "Status", "What it must deliver" ].forEach( ( text ) => {
+    const cell = document.createElement( "th" );
+    cell.textContent = text;
+    headRow.appendChild( cell );
+  } );
+  head.appendChild( headRow );
 
-  const masthead = document.createElement( "header" );
-  masthead.className = "construction-lesson-masthead";
-  const kicker = document.createElement( "p" );
-  kicker.className = "construction-lesson-kicker";
-  kicker.textContent = "Voice Communication University • Construction Studio";
-  const badge = document.createElement( "span" );
-  badge.className = `construction-lesson-badge status-${status}`;
-  badge.textContent = status;
-  const title = document.createElement( "h1" );
-  title.textContent = constructionTaskTitle( task );
-  const edition = document.createElement( "p" );
-  edition.className = "construction-lesson-edition";
-  const objectName = focus.dataset.constructionObject
-    || content.querySelector( ".construction-task-tree" )?.dataset.constructionObject
-    || "Agent Block";
-  edition.textContent = `${objectName} construction lesson`;
-  masthead.append( kicker, badge, title, edition );
-  article.appendChild( masthead );
+  const bodyRows = document.createElement( "tbody" );
+  children.forEach( ( child, index ) => {
+    const status = child.dataset.taskStatus || "planned";
+    const row = document.createElement( "tr" );
 
-  const body = document.createElement( "div" );
-  body.className = "construction-lesson-body";
+    const position = document.createElement( "td" );
+    position.textContent = String( index + 1 );
 
-  const keyIdea = document.createElement( "blockquote" );
-  keyIdea.className = "construction-lesson-callout";
-  const keyLabel = document.createElement( "span" );
-  keyLabel.className = "construction-lesson-callout-label";
-  keyLabel.textContent = "Task purpose";
-  const purpose = document.createElement( "strong" );
-  purpose.textContent = constructionTaskDescription( task );
-  keyIdea.append( keyLabel, purpose );
-  body.appendChild( keyIdea );
+    const title = document.createElement( "td" );
+    title.textContent = constructionTaskTitle( child );
 
-  appendConstructionLessonSection( body, "1. Reading the status", statusReading );
+    const statusCell = document.createElement( "td" );
+    const chip = document.createElement( "span" );
+    chip.className = `construction-status-chip status-${status}`;
+    chip.textContent = constructionStatusWord( status );
+    statusCell.appendChild( chip );
 
+    const detail = document.createElement( "td" );
+    detail.textContent = constructionTaskDescription( child );
+
+    row.append( position, title, statusCell, detail );
+    bodyRows.appendChild( row );
+  } );
+
+  table.append( head, bodyRows );
+  wrap.appendChild( table );
+  parent.appendChild( wrap );
+}
+
+function numberConstructionLessonChapters( body ) {
+  body.querySelectorAll( "h2" ).forEach( ( heading, index ) => {
+    heading.textContent = `${index + 1}. ${heading.textContent}`;
+  } );
+}
+
+function appendConstructionLessonCounts( parent, counts ) {
   const snapshot = document.createElement( "section" );
   const snapshotTitle = document.createElement( "h2" );
-  snapshotTitle.textContent = "2. Scope snapshot";
+  snapshotTitle.textContent = "Progress count for this stage";
   const metrics = document.createElement( "div" );
   metrics.className = "construction-lesson-metrics";
   [
-    [ "Tasks in scope", counts.total ],
-    [ "Current", counts.current ],
-    [ "Planned", counts.planned ],
+    [ "Items in scope", counts.total ],
+    [ "In progress", counts.current ],
+    [ "Not started", counts.planned ],
     [ "Done", counts.done ],
   ].forEach( ( [ labelText, value ] ) => {
     const metric = document.createElement( "div" );
@@ -368,13 +528,86 @@ function renderConstructionTextbookTask( focus, task ) {
     metric.append( number, label );
     metrics.appendChild( metric );
   } );
-  snapshot.append( snapshotTitle, metrics );
-  body.appendChild( snapshot );
+  const snapshotCaption = document.createElement( "p" );
+  snapshotCaption.className = "construction-progress-caption";
+  snapshotCaption.textContent = "Counted from this stage and everything nested underneath it.";
+  snapshot.append( snapshotTitle, metrics, snapshotCaption );
+  parent.appendChild( snapshot );
+}
 
+function renderConstructionTextbookTask( focus, task ) {
+  const status = task.dataset.taskStatus || "planned";
+  const children = directConstructionTasks( task );
+  const scopedTasks = [ task, ...Array.from( task.querySelectorAll( "li[data-task-id]" ) ) ];
+  const counts = constructionStatusCounts( scopedTasks );
+
+  const article = document.createElement( "article" );
+  article.className = "construction-lesson";
+
+  const masthead = document.createElement( "header" );
+  masthead.className = "construction-lesson-masthead";
+  const kicker = document.createElement( "p" );
+  kicker.className = "construction-lesson-kicker";
+  kicker.textContent = "Voice Communication University \u2022 Construction Studio";
+  const badge = document.createElement( "span" );
+  badge.className = `construction-lesson-badge status-${status}`;
+  badge.textContent = constructionStatusWord( status );
+  const title = document.createElement( "h1" );
+  // A lesson may name its own document title; the row's <strong> is the fallback.
+  title.textContent = constructionTaskLesson( task )?.dataset.lessonTitle
+    || constructionTaskTitle( task );
+  const edition = document.createElement( "p" );
+  edition.className = "construction-lesson-edition";
+  const objectName = focus.dataset.constructionObject
+    || content.querySelector( ".construction-task-tree" )?.dataset.constructionObject
+    || "Agent Block";
+  edition.textContent = `${objectName} construction lesson`;
+  const trail = document.createElement( "p" );
+  trail.className = "construction-lesson-trail";
+  trail.textContent = constructionTrailSentence( task );
+  masthead.append( kicker, badge, title, edition, trail );
+  article.appendChild( masthead );
+
+  const body = document.createElement( "div" );
+  body.className = "construction-lesson-body";
+
+  const keyIdea = document.createElement( "blockquote" );
+  keyIdea.className = "construction-lesson-callout";
+  const keyLabel = document.createElement( "span" );
+  keyLabel.className = "construction-lesson-callout-label";
+  keyLabel.textContent = "What this step is for";
+  const purpose = document.createElement( "strong" );
+  purpose.textContent = constructionTaskDescription( task );
+  keyIdea.append( keyLabel, purpose );
+  body.appendChild( keyIdea );
+
+  const lesson = constructionTaskLesson( task );
+  if ( lesson ) {
+    Array.from( lesson.children ).forEach( ( section ) => {
+      body.appendChild( section.cloneNode( true ) );
+    } );
+  }
+
+  if ( children.length > 0 ) {
+    const roster = document.createElement( "section" );
+    const rosterTitle = document.createElement( "h2" );
+    rosterTitle.textContent = "The work inside this stage";
+    const rosterIntro = document.createElement( "p" );
+    const doneChildren = children.filter( ( child ) => child.dataset.taskStatus === "done" ).length;
+    const nextChild = children.find( ( child ) => child.dataset.taskStatus !== "done" );
+    rosterIntro.textContent = nextChild
+      ? `${doneChildren} of ${children.length} finished. The next one to work on is \u201c${constructionTaskTitle( nextChild )}\u201d.`
+      : `All ${children.length} are finished, so this stage is only waiting on its own sign-off.`;
+    roster.append( rosterTitle, rosterIntro );
+    body.appendChild( roster );
+    appendConstructionChildRoster( body, children );
+  }
+
+  if ( children.length > 0 ) appendConstructionLessonCounts( body, counts );
   const continuation = children.length > 0
-    ? `This is an expandable workstream with ${children.length} immediate ${children.length === 1 ? "child task" : "child tasks"}. Use the red-tagged sidebar navigation to study one child at a time; the full tree remains hidden.`
-    : "This is a leaf task: the smallest visible unit in this plan. Move it to done only after its behavior is implemented and focused verification evidence has been recorded.";
-  appendConstructionLessonSection( body, "3. How construction continues", continuation );
+    ? `This is a stage, not a single job: it opens into ${children.length} smaller ${children.length === 1 ? "item" : "items"}. Open the red-tagged sidebar entries one at a time to read each one; the rest of the tree stays hidden.`
+    : "This is a leaf: the smallest unit in this plan, small enough that one person can finish it and prove it in one sitting. Nothing under it is hidden.";
+  appendConstructionLessonSection( body, "How to continue from here", continuation );
 
   const finalIdea = document.createElement( "blockquote" );
   finalIdea.className = "construction-lesson-callout principle";
@@ -382,16 +615,23 @@ function renderConstructionTextbookTask( focus, task ) {
   finalLabel.className = "construction-lesson-callout-label";
   finalLabel.textContent = "Construction principle";
   const finalText = document.createElement( "strong" );
-  finalText.textContent = "Status is a claim supported by working behavior and verification evidence—not by the existence of a diagram or placeholder.";
+  finalText.textContent = "A status follows the work you can go and look at: a test that runs, a screen that works, a file that is really there. It never follows how finished the idea feels.";
   finalIdea.append( finalLabel, finalText );
   body.appendChild( finalIdea );
+  numberConstructionLessonChapters( body );
   article.appendChild( body );
 
   const footer = document.createElement( "footer" );
   footer.className = "construction-lesson-footer";
-  footer.textContent = `Voice Communication University • ${objectName} Construction Status`;
+  footer.textContent = `Voice Communication University \u2022 ${objectName} Construction Status`;
   article.appendChild( footer );
   focus.appendChild( article );
+  // Cloned <script> nodes never run on their own, so re-create any the lesson
+  // carries the same way loadFile() does -- and only after the article is in
+  // the document. Mermaid figures are rendered here rather than by a script in
+  // every lesson page.
+  executeScripts( focus );
+  renderLessonDiagrams( focus );
 }
 
 function renderConstructionTaskContent( task ) {

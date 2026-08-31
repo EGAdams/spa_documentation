@@ -459,6 +459,106 @@ h1, h2, p {
   font: .8rem/1.4 Arial, Helvetica, sans-serif;
 }
 
+.construction-status-table-wrap {
+  margin: 1.35em 0 1.8em;
+  overflow-x: auto;
+  border: 1px solid var(--status-line);
+  border-radius: 8px;
+}
+
+.construction-status-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  font: .9rem/1.5 Arial, Helvetica, sans-serif;
+}
+
+.construction-status-table th {
+  padding: 11px 13px;
+  background: var(--status-navy);
+  color: white;
+  text-align: left;
+}
+
+.construction-status-table td {
+  padding: 11px 13px;
+  border-top: 1px solid var(--status-line);
+  vertical-align: top;
+}
+
+.construction-status-table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.construction-lesson-trail {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, .25);
+  opacity: .85;
+  font: .78rem/1.5 Arial, Helvetica, sans-serif;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.construction-status-chip {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #e5e9ef;
+  color: #46525f;
+  font: 700 .72rem/1.4 Arial, Helvetica, sans-serif;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.construction-status-chip.status-current {
+  background: #dbe4ff;
+  color: #2b3fa0;
+}
+
+.construction-status-chip.status-done {
+  background: #d3f9d8;
+  color: #22703a;
+}
+
+.construction-lesson-evidence {
+  margin: 1.1em 0;
+  padding-left: 1.3em;
+}
+
+.construction-lesson-evidence li {
+  margin: .4em 0;
+}
+
+.construction-lesson code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #eef1f6;
+  font-size: .88em;
+}
+
+/* Short inline listing. Replaces the full VS Code editor chrome where the
+   point is the shape of the code, not a screenshot of an editor. */
+.construction-lesson pre.lesson-snippet {
+  margin: 18px 0;
+  padding: 16px 18px;
+  overflow-x: auto;
+  border: 1px solid #24354f;
+  border-radius: 8px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-size: .82rem;
+  line-height: 1.55;
+}
+
+.construction-lesson pre.lesson-snippet code {
+  padding: 0;
+  background: none;
+  color: inherit;
+  font-size: inherit;
+}
+
 .construction-status-footer,
 .construction-lesson-footer {
   padding: 23px 32px 30px;
@@ -533,5 +633,408 @@ h1, h2, p {
 
   .update-doc-bar {
     flex-wrap: wrap;
+  }
+}
+
+/* ---- Textbook lesson figures: VS Code source panels and pannable Mermaid
+   diagrams inside a Construction Status lesson. Adapted from the Turn
+   documentation page so lesson pages share its visual language. ---- */
+.construction-lesson .subtitle {
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--status-muted);
+  font-size: .95rem;
+}
+.construction-lesson blockquote {
+  margin: 1.5em 0;
+  padding: 20px 24px;
+  border-left: 5px solid var(--status-blue);
+  background: #eef3f8;
+  border-radius: 0 8px 8px 0;
+  font-size: 1.08rem;
+}
+.construction-lesson blockquote.key-idea {
+  background: #eaf2fb;
+  border-left-color: var(--status-navy);
+}
+.construction-lesson blockquote.principle {
+  background: #f8f2e4;
+  border-left-color: var(--status-gold);
+}
+.construction-lesson .callout-label {
+  display: block;
+  font-family: Arial, Helvetica, sans-serif;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: .14em;
+  font-size: .72rem;
+  color: var(--status-muted);
+  margin-bottom: 5px;
+}
+.construction-lesson .table-wrap {
+  overflow-x: auto;
+  margin: 1.35em 0 1.8em;
+  border: 1px solid var(--status-line);
+  border-radius: 8px;
+}
+.construction-lesson table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: .93rem;
+}
+.construction-lesson tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+.construction-lesson th {
+  text-align: left;
+  background: var(--status-navy);
+  color: white;
+  padding: 12px 14px;
+}
+.construction-lesson td {
+  padding: 12px 14px;
+  border-top: 1px solid var(--status-line);
+  vertical-align: top;
+}
+.construction-lesson tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+.construction-lesson p code,
+.construction-lesson li code,
+.construction-lesson td code {
+  color: #163d68;
+  background: #edf3f8;
+  padding: .08em .3em;
+  border-radius: 4px;
+}
+.construction-lesson .section-rule {
+  border: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--status-gold), transparent);
+  margin: 2.6em 0;
+}
+.construction-lesson .diagram-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--status-line);
+  background: linear-gradient(180deg, #fbfcfe 0%, #f3f6fa 100%);
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--status-muted);
+  font-size: .78rem;
+}
+.construction-lesson .diagram-title {
+  font-weight: 700;
+  color: var(--status-navy);
+  letter-spacing: .02em;
+}
+.construction-lesson .diagram-hint { text-align: center; flex: 1;
+}
+.construction-lesson .diagram-controls { display: flex; gap: 6px;
+}
+.construction-lesson .diagram-controls button {
+  min-width: 32px;
+  height: 28px;
+  padding: 0 9px;
+  border: 1px solid #c8d1dc;
+  border-radius: 5px;
+  background: white;
+  color: var(--status-navy);
+  font: 700 13px/1 Arial, Helvetica, sans-serif;
+  cursor: pointer;
+}
+.construction-lesson .diagram-controls button:hover { background: #eef3f8;
+}
+.construction-lesson .mermaid-viewport {
+  position: relative;
+  height: 440px;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(23,54,93,.035) 1px, transparent 1px),
+    linear-gradient(rgba(23,54,93,.025) 1px, transparent 1px),
+    #fbfaf7;
+  background-size: 24px 24px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.construction-lesson .mermaid-viewport.dragging { cursor: grabbing;
+}
+.construction-lesson .mermaid-canvas {
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* No will-change here: keeping the SVG in its own compositor layer
+     rasterizes it and makes Mermaid text blurry while zoomed. */
+  transform-origin: 0 0;
+}
+/* Mermaid sizes label boxes from a text measurement taken with its own
+   font stack. When that font is not installed the rendered glyphs are
+   taller than the measurement, and the label's foreignObject clips the
+   descenders. Letting labels overflow their measured box is harmless and
+   keeps text readable whatever fonts the viewer happens to have. */
+.construction-lesson .mermaid-canvas foreignObject,
+.construction-lesson .mermaid-canvas foreignObject div,
+.construction-lesson .mermaid-canvas .label {
+  overflow: visible;
+}
+.construction-lesson .mermaid-canvas svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: none !important;
+}
+/* No font-family override here. Mermaid measures label boxes with the font
+   it was initialized with; forcing a different one in CSS leaves the boxes
+   sized for the old metrics and clips SVG text in class diagrams. */
+.construction-lesson .mermaid-viewport .edgeLabel {
+  background: #fbfaf7 !important;
+  color: var(--status-ink) !important;
+}
+@media (max-width: 700px) {
+  .construction-lesson .mermaid-viewport { height: 360px;
+  }
+  .construction-lesson .diagram-hint { display: none;
+  }
+}
+@media print {
+  .construction-lesson .diagram-toolbar { display: none;
+  }
+  .construction-lesson .mermaid-viewport {
+    height: auto;
+    overflow: visible;
+    background: white;
+  }
+  .construction-lesson .mermaid-canvas { transform: none !important;
+  }
+  .construction-lesson .mermaid-figure { break-inside: avoid; box-shadow: none;
+  }
+}
+.construction-lesson .vscode-titlebar {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px 0 12px;
+  background: #181818;
+  color: #cccccc;
+  border-bottom: 1px solid #2b2b2b;
+  font: 12px/1.2 "Segoe UI", Arial, sans-serif;
+}
+.construction-lesson .vscode-app {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #c8c8c8;
+}
+.construction-lesson .vscode-logo {
+  width: 16px;
+  height: 16px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 3px;
+  background: #007acc;
+  color: white;
+  font: 700 8px/1 "Segoe UI", Arial, sans-serif;
+  letter-spacing: -.03em;
+}
+.construction-lesson .vscode-window-controls {
+  display: flex;
+  gap: 14px;
+  color: #999;
+  font-size: 11px;
+  letter-spacing: .02em;
+}
+.construction-lesson .vscode-tabs {
+  height: 36px;
+  display: flex;
+  align-items: stretch;
+  background: #252526;
+  border-bottom: 1px solid #191919;
+}
+.construction-lesson .vscode-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 170px;
+  padding: 0 14px;
+  background: #1e1e1e;
+  border-top: 1px solid #007acc;
+  color: #d7d7d7;
+  font: 12.5px/1 "Segoe UI", Arial, sans-serif;
+}
+.construction-lesson .vscode-python-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #3776ab 0 52%, #ffd343 52% 100%);
+  color: #fff;
+  font: 800 7px/1 Arial, sans-serif;
+  text-shadow: 0 1px 1px rgba(0,0,0,.45);
+}
+.construction-lesson .vscode-ts-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  background: #3178c6;
+  color: #fff;
+  font: 800 7px/1 Arial, sans-serif;
+}
+.construction-lesson .vscode-text-badge {
+  width: 16px;
+  color: #9cdcfe;
+  font: 700 10px/1 Consolas, monospace;
+}
+.construction-lesson .vscode-editor pre.vscode-code {
+  margin: 0;
+  padding: 10px 0 12px;
+  overflow-x: auto;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  line-height: 1.25;
+  font-size: 13.5px;
+  tab-size: 4;
+  white-space: normal;
+}
+.construction-lesson .vscode-editor code {
+  font-family: Consolas, "Cascadia Code", "Courier New", monospace;
+  font-size: 1em;
+}
+.construction-lesson .vscode-code-line {
+  display: grid;
+  line-height: 1.25;
+  grid-template-columns: 52px max-content;
+  min-width: 100%;
+  width: max-content;
+  min-height: 17px;
+  margin: 0;
+  padding: 0;
+}
+.construction-lesson .vscode-code-line:hover {
+  background: rgba(255,255,255,.025);
+}
+.construction-lesson .vscode-line-number {
+  padding: 0 14px 0 0;
+  line-height: 1.25;
+  color: #858585;
+  text-align: right;
+  user-select: none;
+  border-right: 1px solid rgba(255,255,255,.035);
+}
+/* An excerpt panel skips lines; this row marks the gap without faking a number. */
+.construction-lesson .vscode-code-elision .vscode-line-number,
+.construction-lesson .vscode-code-elision .vscode-line-text {
+  color: #6a6a6a;
+}
+.construction-lesson .vscode-code-elision:hover {
+  background: none;
+}
+.construction-lesson .vscode-line-text {
+  display: block;
+  line-height: 1.25;
+  padding: 0 18px 0 16px;
+  white-space: pre;
+  color: #d4d4d4;
+}
+.construction-lesson .vscode-statusbar {
+  min-height: 23px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 0 10px;
+  background: #007acc;
+  color: white;
+  font: 11px/1.2 "Segoe UI", Arial, sans-serif;
+}
+.construction-lesson .vscode-status-left, .construction-lesson .vscode-status-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  white-space: nowrap;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .c, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .ch, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .cm, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .cp, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .cpf, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .c1, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .cs { color: #6a9955;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .k, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .kc, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .kd, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .kn, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .kp, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .kr, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .kt { color: #c586c0;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .o, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .ow { color: #d4d4d4;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .n { color: #9cdcfe;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .na { color: #9cdcfe;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .nb { color: #4ec9b0;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .nc { color: #4ec9b0;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .nd { color: #dcdcaa;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .ne { color: #4ec9b0;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .nf { color: #dcdcaa;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .ni { color: #d4d4d4;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .nl { color: #9cdcfe;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .nn { color: #4ec9b0;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .nt { color: #569cd6;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .nv, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .vc, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .vg, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .vi { color: #9cdcfe;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .m, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .mb, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .mf, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .mh, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .mi, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .mo, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .il { color: #b5cea8;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .s, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .sa, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .sb, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .sc, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .dl, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .sd, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .s2, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .se, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .sh, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .si, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .sx, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .sr, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .s1, .construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .ss { color: #ce9178;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .bp { color: #569cd6;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .fm { color: #dcdcaa;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .err { color: #f44747; background: transparent;
+}
+.construction-lesson :is( .vscode-editor, pre.lesson-snippet ) .w { color: #d4d4d4;
+}
+@media (max-width: 700px) {
+  .construction-lesson .vscode-window-controls { display: none;
+  }
+  .construction-lesson .vscode-tab { min-width: 145px;
+  }
+  .construction-lesson .vscode-editor pre.vscode-code { font-size: 12.5px;
+  }
+  .construction-lesson .vscode-code-line { grid-template-columns: 42px max-content;
+  }
+  .construction-lesson .vscode-line-number { padding-right: 10px;
+  }
+  .construction-lesson .vscode-line-text { padding-left: 12px;
+  }
+  .construction-lesson .vscode-status-left { display: none;
+  }
+}
+@media print {
+  .construction-lesson .vscode-titlebar, .construction-lesson .vscode-tabs, .construction-lesson .vscode-statusbar { display: none;
+  }
+  .construction-lesson .vscode-editor {
+    border: 1px solid #444;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  .construction-lesson .vscode-editor pre.vscode-code {
+    white-space: pre-wrap;
+    background: #1e1e1e !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }

@@ -83,6 +83,57 @@ adding per-object JavaScript. The page itself is the source of truth:
   selected lesson title, purpose, status reading, scoped counts, and child/leaf
   guidance from the same hidden task markup; do not duplicate that information
   in JavaScript.
+- A task may carry an authored lesson: one direct child
+  `<div class="construction-task-lesson" hidden>` holding `<section><h2>...</h2>`
+  blocks. The renderer clones those sections into the generated lesson after the
+  purpose callout, and numbers every `h2` in the finished page, so authored
+  headings must not carry their own numbers. An optional `data-lesson-title` on
+  that same div names the document -- it replaces the masthead `h1`, which
+  otherwise repeats the task row's `<strong>`. Use it when the lesson reads as
+  a standing document rather than an instruction ("Interface File Construction
+  Status", not "Write the interface file"); it changes the masthead only, so
+  nav labels and child rosters keep the short row text. Use it to say what a task means,
+  what exists today, what is missing, how we will know it is done, and the next
+  concrete action; without it a task still renders, just generically.
+- **A lesson's Mermaid figures need no `<script>` of their own.** Author the
+  markup only -- `.mermaid-figure[data-diagram]` > `.diagram-toolbar` +
+  `.mermaid-viewport` > `.mermaid-canvas` > `pre.mermaid` -- and `app.js`'s
+  `renderLessonDiagrams()` renders and wires pan/zoom for every figure in the
+  focus panel. It runs right after `executeScripts( focus )` (which is still
+  there, because a lesson may carry a script for something else, and cloned
+  `<script>` nodes never run on their own). Keeping this in `app.js` is what
+  lets a lesson page stay short; do not paste a per-page copy back in.
+  `MERMAID_THEME` there carries the two settings that are easy to get wrong:
+  `textColor` dark, for sequence message text drawn on the page background, and
+  `classText` white, for class-diagram labels drawn inside the navy boxes. The
+  renderer reads each definition from the `<pre>`'s **innerHTML** with entities
+  decoded, because `textContent` drops `<br/>` in labels. Label
+  `foreignObject`s still need `overflow: visible` in `styles.css` or descenders
+  clip wherever Mermaid's own font stack is not installed.
+- **A completed item shows its real source in a full VS Code panel.** Generate
+  it with Pygments (`TypeScriptLexer` for `.ts`) wrapped in the
+  `.vscode-editor` chrome -- filename tab, line numbers, status bar -- because
+  the frame is what makes a reader trust it is the file on disk and not a
+  paraphrase. `pre.lesson-snippet` exists for short illustrative fragments that
+  are not a real file; it shares the same Dark+ token palette, which is scoped
+  `.construction-lesson :is( .vscode-editor, pre.lesson-snippet )`. Panels run
+  3-5 KB each, so include the ones that carry the item and cut the rest. When
+  the item owns only part of a shared file, show real line ranges with a
+  `.vscode-code-elision` row between them rather than the whole file -- the
+  "Event Contracts" lesson does this to `contracts.ts`, 5 KB instead of 19 KB,
+  and the preserved line numbers are what keep it checkable.
+  `voice_communication/conversation_agent/`'s "Interface File", "Event
+  Contracts", and "Publish Barrel" lessons are the worked examples of the whole
+  shape (the last one shows a lesson whose item spans two languages: three
+  panels, TypeScript and Python, each excerpted): a status
+  table of what is done and what is not, the source, two figures, what has to
+  happen next, and how to check it yourself. Its presentation lives in `styles.css` scoped under
+  `.construction-lesson`.
+- The renderer derives the rest and must not be duplicated per page: a
+  masthead trail (`Stage n of m > Step n of m`, with a leading `Stage n --` /
+  `Step n --` prefix stripped from the title), a status-badge reading, a child
+  roster table with status chips, and a progress count. Only stages (tasks with
+  children) get the roster and the count.
 - Set `data-construction-object` on the textbook focus (and normally the hidden
   tree) so generated lesson editions and footers name the owning Agent Block.
   The shared textbook presentation lives in `styles.css`; new object plans do
