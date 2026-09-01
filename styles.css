@@ -353,6 +353,16 @@ h1, h2, p {
   letter-spacing: -.025em;
 }
 
+/* The lesson's own file on disk, under the title. Georgia 12pt as authored;
+   break-all so a long path never widens the masthead on a narrow screen. */
+.construction-lesson-path {
+  margin: 0 0 10px;
+  opacity: .85;
+  color: #fff;
+  font: 12pt/1.45 Georgia, "Times New Roman", serif;
+  word-break: break-all;
+}
+
 .construction-status-edition,
 .construction-lesson-edition {
   margin: 0;

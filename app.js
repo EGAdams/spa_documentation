@@ -125,6 +125,10 @@ const sections = {
 // Every item folder currently uses these same file basenames (see
 // catherine_agent_sdk/basic_agent and .../future_agent).
 const overviewFile = "basic_agent.html";
+// Absolute location of this checkout, shown under each construction lesson's
+// title so a reader knows which file on disk to edit. Both this workstation
+// and the dashboard host keep the repo at the same path; change it here only.
+const DOC_ROOT = "/home/adamsl/agent_blocks/spa_documentation";
 const detailTabs = [
   { key: "source", label: "Source", file: "basic_agent.py.html" },
   { key: "class", label: "Class Diagram", file: "mermaid_class.html" },
@@ -665,6 +669,10 @@ function renderConstructionTextbookTask( focus, task ) {
   // A lesson may name its own document title; the row's <strong> is the fallback.
   title.textContent = constructionTaskLesson( task )?.dataset.lessonTitle
     || constructionTaskTitle( task );
+  const sourcePath = document.createElement( "p" );
+  sourcePath.className = "construction-lesson-path";
+  const statusTab = detailTabs.find( ( tab ) => tab.key === "status" );
+  sourcePath.textContent = `${DOC_ROOT}/${filePath( statusTab.file )}`;
   const edition = document.createElement( "p" );
   edition.className = "construction-lesson-edition";
   const objectName = focus.dataset.constructionObject
@@ -674,7 +682,7 @@ function renderConstructionTextbookTask( focus, task ) {
   const trail = document.createElement( "p" );
   trail.className = "construction-lesson-trail";
   trail.textContent = constructionTrailSentence( task );
-  masthead.append( kicker, badge, title, edition, trail );
+  masthead.append( kicker, badge, title, sourcePath, edition, trail );
   article.appendChild( masthead );
 
   const body = document.createElement( "div" );
@@ -723,15 +731,6 @@ function renderConstructionTextbookTask( focus, task ) {
     appendConstructionLessonSection( body, "How to continue from here", continuation );
   }
 
-  const finalIdea = document.createElement( "blockquote" );
-  finalIdea.className = "construction-lesson-callout principle";
-  const finalLabel = document.createElement( "span" );
-  finalLabel.className = "construction-lesson-callout-label";
-  finalLabel.textContent = "Construction principle";
-  const finalText = document.createElement( "strong" );
-  finalText.textContent = "A status follows the work you can go and look at: a test that runs, a screen that works, a file that is really there. It never follows how finished the idea feels.";
-  finalIdea.append( finalLabel, finalText );
-  body.appendChild( finalIdea );
   numberConstructionLessonChapters( body );
   article.appendChild( body );
 
