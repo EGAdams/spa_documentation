@@ -342,6 +342,69 @@
 <button class="run-tests-button" type="button" data-run-test-suite="interface-file" data-api-path="api/run-interface-file-tests">Run Interface File Checks</button>
 <p class="run-tests-status" role="status" aria-live="polite" hidden></p>
 </section>
+
+<section>
+<h2>Next steps, in the order they unblock each other</h2>
+<p>Nothing on this list is work <em>inside</em> this file &mdash; the file is finished. Each row is a different task, named exactly as it appears in the sidebar, and the rows above a row have to be settled before that row can be built without guessing.</p>
+<blockquote class="key-idea">
+<span class="callout-label">Work on this one first</span>
+<strong>Reconcile AgentEvent. Every remaining item on this page streams that type across the boundary, so until the three copies agree, anything built on top of them is built on a shape that is about to change.</strong>
+</blockquote>
+<div class="table-wrap"><table>
+<thead><tr><th>Order</th><th>Task to work on</th><th>State</th><th>Why it comes here, and what it unblocks</th></tr></thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Reconcile AgentEvent</strong><br><em>2. Prove With One Adapter</em></td>
+<td><span class="construction-status-chip status-current">In progress</span></td>
+<td>TypeScript requires <code>sessionId</code>, <code>pydantic_models/models.py</code> requires <code>session_id: UUID</code>, and the Python adapter's copy has neither plus only two of the five kinds. Settling it &mdash; including deciding whether <code>submit()</code> hands the session id down or the event stops carrying it &mdash; unblocks every row below.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Cancellation Rule</strong><br><em>2. Prove With One Adapter</em></td>
+<td><span class="construction-status-chip">Not started</span></td>
+<td>The only decision that can still change <em>this</em> file. Either interrupting a turn becomes a second method every adapter must implement, or it becomes a separate lifecycle interface. Answer it before an adapter is written, not after two of them exist.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Implement Adapter Class</strong><br><em>3. TypeScript Adapter</em></td>
+<td><span class="construction-status-chip">Not started</span></td>
+<td><code>letta_agent_adapter.ts</code> is still an empty <code>extends</code> with no body. Python proves the shape is implementable; nothing yet proves it in the browser, where the screen actually lives.</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Translate The Stream</strong><br><em>3. TypeScript Adapter</em></td>
+<td><span class="construction-status-chip">Not started</span></td>
+<td>The translation seam from Figure 2, steps 6&ndash;9. It can only be written once row 1 has fixed what a legal event looks like.</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Contract Tests</strong><br><em>3. TypeScript Adapter</em></td>
+<td><span class="construction-status-chip">Not started</span></td>
+<td>Gives the TypeScript side the same offline proof <code>claude_agent_adapter/</code> already gives the Python side, so a future adapter can be checked against the port rather than against a running backend.</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Replace Direct Request</strong><br><em>4. Adopt In Toyota</em></td>
+<td><span class="construction-status-chip">Not started</span></td>
+<td>The first real consumer. Until a screen calls <code>submit()</code>, the &ldquo;A real screen depends on it&rdquo; row in the first section stays Not started and this interface remains a well-supported hypothesis.</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>5. Verify Live Turn</strong><br><em>whole stage</em></td>
+<td><span class="construction-status-chip">Not started</span></td>
+<td>Runs Figure 2 for real, end to end. It is the only evidence that the arrangement on this page survives contact with a live backend.</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>What would bring work back to this page</strong></p>
+<ul>
+<li><strong>Row 1 removing the session id from the event.</strong> Then <code>submit()</code> grows a parameter, and the nine lines shown above change.</li>
+<li><strong>Row 2 choosing a second method.</strong> Then cancellation lands on <code>IConversationAgent</code> itself rather than beside it.</li>
+<li><strong>Row 6 landing.</strong> The <code>grep</code> in the checking section gains a fourth hit, and the last two rows of the first section finally move off Not started.</li>
+</ul>
+<p>Anything else on the list can be built without editing <code>conversation_agent.ts</code>. If a row forces an edit here that is not one of the three above, the port was drawn in the wrong place and this page should be re-read before the change is made.</p>
+</section>
 </div>
       </li>
 
