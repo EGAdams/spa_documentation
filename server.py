@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Local dev server for spa_documentation.
 
-Same static-file behavior as `python3 -m http.server`, plus three extra routes:
+Same static-file behavior as `python3 -m http.server`, plus local API routes:
 
     GET /api/git-status?item=<docs-item-path>
         -> { "item": ..., "exists": bool, "dirty": bool, "docs_missing": bool }
@@ -11,6 +11,9 @@ Same static-file behavior as `python3 -m http.server`, plus three extra routes:
 
     GET /api/run-update-status?item=<docs-item-path>
         -> { "running": bool, "exit_code": int|null, "log_tail": str }
+
+    POST /api/run-interface-file-tests
+        -> { "ok": bool, "terminal": "Windows Terminal", "profile": "Ubuntu-26.04" }
 
 /api/git-status runs `git status --porcelain` on that item's real source file
 (see doc_source_map.py for the item-path -> source-file mapping) and also
@@ -35,17 +38,37 @@ this file itself is stdlib only.
 """
 import json
 import os
+import shutil
 import subprocess
 import threading
 import time
 import urllib.parse
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 
 from doc_source_map import DOCS_ROOT, docs_missing, resolve_source_path
 
 VENV_PYTHON = DOCS_ROOT / ".venv" / "bin" / "python"
 UPDATE_SCRIPT = DOCS_ROOT / "update_documentation_agent.py"
 RUNS_DIR = DOCS_ROOT / ".update_runs"
+AGENT_BLOCKS_ROOT = DOCS_ROOT.parent
+INTERFACE_FILE_TEST_SCRIPT = DOCS_ROOT / "scripts" / "run_interface_file_tests.sh"
+WINDOWS_TERMINAL_PROFILE = "Ubuntu-26.04"
+WSL_DISTRO = "Ubuntu-26.04"
+WINDOWS_MOUNT_ROOT = Path( "/mnt" )
+WINDOWS_SYSTEM32 = WINDOWS_MOUNT_ROOT / "c" / "Windows" / "System32"
+WINDOWS_SESSION_ENV_KEYS = (
+    "DISPLAY",
+    "PULSE_SERVER",
+    "WAYLAND_DISPLAY",
+    "WSL2_GUI_APPS_ENABLED",
+    "WSLENV",
+    "WSL_DISTRO_NAME",
+    "WSL_INTEROP",
+    "WT_PROFILE_ID",
+    "WT_SESSION",
+    "XDG_RUNTIME_DIR",
+)
 
 # item -> {"proc": Popen, "log_path": Path, "log_file": file, "started": float}.
 # One in-flight run per item; guarded by _runs_lock since ThreadingHTTPServer
@@ -75,6 +98,134 @@ def _start_update_run( item: str ) -> dict:
     return { "proc": proc, "log_path": log_path, "log_file": log_file, "started": time.time() }
 
 
+def _as_wsl_path( windows_path: str ) -> str | None:
+    if len( windows_path ) < 3 or windows_path[ 1:3 ] != ":\\":
+        return None
+    drive = windows_path[ 0 ].lower()
+    relative_path = windows_path[ 3: ].replace( "\\", "/" )
+    return str( WINDOWS_MOUNT_ROOT / drive / relative_path )
+
+
+def _find_windows_executable( name: str ) -> str | None:
+    executable = shutil.which( name )
+    if executable is not None:
+        return executable
+
+    system_executable = WINDOWS_SYSTEM32 / name
+    if system_executable.is_file():
+        return str( system_executable )
+
+    # The systemd user service intentionally has a Linux-only PATH. Ask
+    # Windows to resolve per-user app execution aliases such as wt.exe rather
+    # than hard-coding the Windows account name into this server.
+    cmd = WINDOWS_SYSTEM32 / "cmd.exe"
+    if not cmd.is_file():
+        return None
+    result = subprocess.run(
+        [ str( cmd ), "/d", "/s", "/c", "where", name ],
+        cwd=str( WINDOWS_SYSTEM32 ),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    for candidate in result.stdout.splitlines():
+        wsl_path = _as_wsl_path( candidate.strip() )
+        if wsl_path is not None and os.path.isfile( wsl_path ):
+            return wsl_path
+    return None
+
+
+def _windows_terminal_environment() -> dict:
+    env = dict( os.environ )
+    session_candidates: list[ tuple[ int, dict[ str, str ] ] ] = []
+
+    # A systemd user service starts before Windows Terminal and therefore does
+    # not inherit that terminal's WSL interop socket. At click time, borrow only
+    # the desktop/interop variables from an active interactive shell. Do not
+    # copy its full environment; it can contain credentials unrelated to this
+    # fixed launcher.
+    for environ_path in Path( "/proc" ).glob( "[0-9]*/environ" ):
+        try:
+            process_name = ( environ_path.parent / "comm" ).read_text().strip()
+            if process_name not in { "bash", "fish", "zsh" }:
+                continue
+            entries = environ_path.read_bytes().split( b"\0" )
+        except ( OSError, UnicodeError ):
+            continue
+
+        process_env: dict[ str, str ] = {}
+        for entry in entries:
+            if b"=" not in entry:
+                continue
+            key, value = entry.split( b"=", 1 )
+            process_env[ key.decode( "utf-8", errors="replace" ) ] = value.decode(
+                "utf-8",
+                errors="replace",
+            )
+
+        interop = process_env.get( "WSL_INTEROP", "" )
+        if not process_env.get( "WT_SESSION" ) or not os.path.exists( interop ):
+            continue
+        session_candidates.append(( int( environ_path.parent.name ), process_env ))
+
+    if session_candidates:
+        _, session_env = max( session_candidates, key=lambda candidate: candidate[ 0 ] )
+        for key in WINDOWS_SESSION_ENV_KEYS:
+            value = session_env.get( key )
+            if value is not None:
+                env[ key ] = value
+
+    return env
+
+
+def _open_interface_file_test_terminal() -> None:
+    windows_terminal = _find_windows_executable( "wt.exe" )
+    wsl = _find_windows_executable( "wsl.exe" )
+    if windows_terminal is None or wsl is None:
+        raise RuntimeError( "Windows Terminal or WSL is not available from this environment" )
+    if not INTERFACE_FILE_TEST_SCRIPT.is_file():
+        raise RuntimeError( "Interface File test script is missing" )
+    launch_env = _windows_terminal_environment()
+    if not launch_env.get( "WSL_INTEROP" ) or not launch_env.get( "WT_SESSION" ):
+        raise RuntimeError(
+            "No active Windows Terminal-backed WSL session is available; open Ubuntu-26.04 once and retry",
+        )
+
+    # The browser cannot start a desktop application itself. This fixed,
+    # argument-only launch is deliberately server-side: no command or path is
+    # accepted from the request. The script ends with `exec bash`, leaving the
+    # Ubuntu tab open and usable after every check finishes.
+    terminal_process = subprocess.Popen(
+        [
+            windows_terminal,
+            "-w",
+            "new",
+            "new-tab",
+            "--profile",
+            WINDOWS_TERMINAL_PROFILE,
+            "--title",
+            "Interface File Tests",
+            # This is a command for Windows Terminal to resolve on the Windows
+            # side. Passing the mounted Linux path (/mnt/c/.../wsl.exe) makes
+            # the terminal tab exit before the WSL command ever starts.
+            "wsl.exe",
+            "-d",
+            WSL_DISTRO,
+            "--cd",
+            str( AGENT_BLOCKS_ROOT ),
+            "--",
+            "bash",
+            str( INTERFACE_FILE_TEST_SCRIPT ),
+        ],
+        cwd=str( DOCS_ROOT ),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        env=launch_env,
+    )
+    threading.Thread( target=terminal_process.wait, daemon=True ).start()
+
+
 class DocsRequestHandler( SimpleHTTPRequestHandler ):
     def do_GET( self ) -> None:
         parsed = urllib.parse.urlparse( self.path )
@@ -90,6 +241,9 @@ class DocsRequestHandler( SimpleHTTPRequestHandler ):
         parsed = urllib.parse.urlparse( self.path )
         if parsed.path == "/api/run-update":
             self._handle_run_update()
+            return
+        if parsed.path == "/api/run-interface-file-tests":
+            self._handle_run_interface_file_tests()
             return
         self.send_error( 404 )
 
@@ -129,6 +283,19 @@ class DocsRequestHandler( SimpleHTTPRequestHandler ):
             _runs[ item ] = _start_update_run( item )
 
         self._send_json( { "ok": True } )
+
+    def _handle_run_interface_file_tests( self ) -> None:
+        try:
+            _open_interface_file_test_terminal()
+        except ( OSError, RuntimeError ) as error:
+            self._send_json( { "ok": False, "error": str( error ) }, 503 )
+            return
+
+        self._send_json( {
+            "ok": True,
+            "terminal": "Windows Terminal",
+            "profile": WINDOWS_TERMINAL_PROFILE,
+        } )
 
     def _handle_run_update_status( self, parsed: urllib.parse.ParseResult ) -> None:
         item = urllib.parse.parse_qs( parsed.query ).get( "item", [ "" ] )[ 0 ]

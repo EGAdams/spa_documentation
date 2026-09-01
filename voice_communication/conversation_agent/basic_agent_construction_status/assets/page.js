@@ -115,6 +115,113 @@
     } );
   }
 
+  function wireSequenceStepTooltips( figure ) {
+    const explanations = Array.from(
+      figure.querySelectorAll( ".diagram-step-tooltips li" ),
+      ( item ) => item.textContent.trim(),
+    );
+    if ( explanations.length === 0 ) return;
+
+    const numbers = figure.querySelectorAll( "svg .sequenceNumber" );
+    numbers.forEach( ( number, index ) => {
+      const explanation = explanations[ index ];
+      if ( !explanation ) return;
+
+      const step = number.textContent.trim();
+      const label = `Step ${step}: ${explanation}`;
+      const tooltipId = `diagram-step-tooltip-${figure.dataset.diagram}-${index + 1}`;
+      let tooltip = null;
+
+      const positionTooltip = ( clientX, clientY ) => {
+        if ( !tooltip ) return;
+        const edge = 12;
+        const gap = 14;
+        const rect = tooltip.getBoundingClientRect();
+        let left = clientX + gap;
+        let top = clientY + gap;
+        if ( left + rect.width > window.innerWidth - edge ) {
+          left = clientX - rect.width - gap;
+        }
+        if ( top + rect.height > window.innerHeight - edge ) {
+          top = clientY - rect.height - gap;
+        }
+        tooltip.style.left = `${Math.max( edge, left )}px`;
+        tooltip.style.top = `${Math.max( edge, top )}px`;
+        tooltip.style.visibility = "visible";
+      };
+      const showTooltip = ( event ) => {
+        if ( tooltip ) return;
+        tooltip = document.createElement( "div" );
+        tooltip.id = tooltipId;
+        tooltip.className = "diagram-step-tooltip";
+        tooltip.setAttribute( "role", "tooltip" );
+        tooltip.textContent = label;
+        tooltip.style.visibility = "hidden";
+        document.body.appendChild( tooltip );
+        const numberRect = number.getBoundingClientRect();
+        positionTooltip(
+          Number.isFinite( event.clientX ) ? event.clientX : numberRect.right,
+          Number.isFinite( event.clientY ) ? event.clientY : numberRect.bottom,
+        );
+      };
+      const hideTooltip = () => {
+        tooltip?.remove();
+        tooltip = null;
+      };
+
+      number.setAttribute( "aria-label", label );
+      number.setAttribute( "aria-describedby", tooltipId );
+      number.setAttribute( "tabindex", "0" );
+      number.style.cursor = "help";
+      number.addEventListener( "mouseenter", showTooltip );
+      number.addEventListener( "mousemove", ( event ) => {
+        positionTooltip( event.clientX, event.clientY );
+      } );
+      number.addEventListener( "mouseleave", hideTooltip );
+      number.addEventListener( "focus", showTooltip );
+      number.addEventListener( "blur", hideTooltip );
+    } );
+  }
+
+  function wireRunTestsButtons() {
+    document.querySelectorAll( "button[data-run-test-suite]" ).forEach( ( button ) => {
+      if ( button.dataset.runTestsWired === "true" ) return;
+      button.dataset.runTestsWired = "true";
+
+      const status = button.parentElement.querySelector( ".run-tests-status" );
+      const idleLabel = button.textContent;
+      button.addEventListener( "click", async () => {
+        button.disabled = true;
+        button.textContent = "Opening Windows Terminal\u2026";
+        if ( status ) {
+          status.hidden = false;
+          status.textContent = "Starting the Ubuntu-26.04 test terminal\u2026";
+        }
+
+        try {
+          const response = await fetch( button.dataset.apiPath, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "{}",
+          } );
+          const result = await response.json();
+          if ( !response.ok || !result.ok ) {
+            throw new Error( result.error || `server returned ${response.status}` );
+          }
+          button.textContent = `${idleLabel} Again`;
+          if ( status ) {
+            status.textContent = "Windows Terminal opened with Ubuntu-26.04. It will remain open after the checks finish.";
+          }
+        } catch ( error ) {
+          button.textContent = idleLabel;
+          if ( status ) status.textContent = `Could not open Windows Terminal: ${error.message}`;
+        } finally {
+          button.disabled = false;
+        }
+      } );
+    } );
+  }
+
   async function renderLessonDiagrams() {
     const figures = Array.from( document.querySelectorAll( ".mermaid-figure" ) );
     if ( figures.length === 0 ) return;
@@ -137,6 +244,7 @@
         const { svg } = await window.mermaid.render( id, definition );
         figure.querySelector( ".mermaid-canvas" ).innerHTML = svg;
         source.dataset.rendered = "1";
+        wireSequenceStepTooltips( figure );
         wireDiagramPanZoom( figure );
       }
     } catch ( error ) {
@@ -147,6 +255,8 @@
     }
   }
 
-  window.addEventListener( "DOMContentLoaded", renderLessonDiagrams );
+  window.addEventListener( "DOMContentLoaded", () => {
+    renderLessonDiagrams();
+    wireRunTestsButtons();
+  } );
 } )();
-

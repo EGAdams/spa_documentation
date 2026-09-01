@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Interface File Construction Status · IConversationAgent Construction Status</title>
-  <link rel="stylesheet" href="../../../../../styles.css?v=20260830eventcontracts">
+  <title>Inerface File Contsruction Status · IConversationAgent Construction Status</title>
+  <link rel="stylesheet" href="../../../../../styles.css?v=20260831stephelpcompact">
   <link rel="stylesheet" href="../../assets/page.css?v=1">
-  <script defer src="../../assets/page.js?v=1"></script>
+  <script defer src="../../assets/page.js?v=4"></script>
 </head>
 <body class="split-doc" data-mermaid-src="../../../../../vendor/mermaid.min.js">
   <main class="split-page-main">
@@ -18,7 +18,7 @@
     <header class="construction-lesson-masthead">
       <p class="construction-lesson-kicker">Voice Communication University &bull; Construction Studio</p>
       <span class="construction-lesson-badge status-done">Done</span>
-      <h1>Interface File Construction Status</h1>
+      <h1>Inerface File Contsruction Status</h1>
       <p class="construction-lesson-edition">IConversationAgent construction lesson</p>
       <p class="construction-lesson-trail">Stage 1 of 5 — Declare the plug-in point  ›  Step 1 of 3 — Write the interface file</p>
     </header>
@@ -147,6 +147,18 @@
     Screen-&gt;&gt;User: renders the reply, then closes the turn</pre>
 </div>
 </div>
+<ol class="diagram-step-tooltips" hidden>
+<li>The user starts a new request by asking the screen to summarize the adapter plan.</li>
+<li>The screen starts a new turn and receives generation 2, a token identifying this as the current turn.</li>
+<li>The screen submits the request through IConversationAgent; it knows the interface, but not the concrete adapter behind it.</li>
+<li>The interface call is dispatched to whichever adapter was injected when the application was assembled.</li>
+<li>The adapter translates the common submit call into the selected backend's SDK, HTTP, or websocket request.</li>
+<li>The backend returns vendor-specific messages that the adapter must translate before the screen can use them.</li>
+<li>The first assistant_text event carries the beginning of one streamed sentence: “We agreed to use one interface”.</li>
+<li>The second assistant_text event completes that same sentence with “with swappable adapters.” The screen appends it to step 7.</li>
+<li>The terminal event tells the screen that generation 2 has no more response chunks.</li>
+<li>The screen displays the joined sentence as one reply and closes the completed turn.</li>
+</ol>
 </div>
 <p class="subtitle"><strong>Figure 2.</strong> Here <code>generation</code> is a current-turn token, not a model version: when turn 2 begins, late events from interrupted turn 1 can be ignored. Vendor message shapes stop at the adapter, and only <code>AgentEvent</code> values cross back to the screen.</p>
 <ul>
@@ -173,9 +185,20 @@
 <li><code>cd claude_agent_adapter &amp;&amp; ../lancedb_memory/.venv/bin/python tests/test_adapter.py</code> — 4/4 pass.</li>
 </ol>
 </section>
-<section>
-<h2>7. How to continue from here</h2>
-<p>This is a leaf: the smallest unit in this plan, small enough that one person can finish it and prove it in one sitting. Nothing under it is hidden.</p>
+<section id="run-tests">
+<h2>7. How TDD continues this work</h2>
+<p>The next active work starts with one failing contract-parity test for <code>AgentEvent</code>. The test belongs beside the source code, not inside this HTML page. This page's button should only launch and report the real source-side checks.</p>
+<ol>
+<li>Write the parity test and confirm that it fails because the TypeScript and Python contracts disagree.</li>
+<li>Review the failure before changing production code.</li>
+<li>Make the smallest contract change that turns the test green.</li>
+</ol>
+<p>The completed Interface File checks stay green. Later adapter, Toyota, cancellation, and live-turn tasks remain <strong>Not started</strong> until each becomes current; they do not become permanent failing tests in advance.</p>
+</section>
+<section id="run-interface-checks">
+<h2>8. How to continue from here</h2>
+<button class="run-tests-button" type="button" data-run-test-suite="interface-file" data-api-path="../../../../../api/run-interface-file-tests">Run Interface File Checks</button>
+<p class="run-tests-status" role="status" aria-live="polite" hidden></p>
 </section>
 <blockquote class="construction-lesson-callout principle">
 <span class="construction-lesson-callout-label">Construction principle</span>

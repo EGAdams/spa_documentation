@@ -748,6 +748,36 @@ h1, h2, p {
 }
 .construction-lesson .diagram-controls button:hover { background: #eef3f8;
 }
+.construction-lesson .run-tests-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 132px;
+  min-height: 42px;
+  padding: 10px 20px;
+  border: 1px solid #0d2744;
+  border-radius: 6px;
+  background: #17365d;
+  color: #ffffff;
+  font: 700 .9rem/1 Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba( 23, 54, 93, .2 );
+}
+.construction-lesson .run-tests-button:hover { background: #244f7f;
+}
+.construction-lesson .run-tests-button:focus-visible {
+  outline: 3px solid rgba( 181, 139, 54, .45 );
+  outline-offset: 3px;
+}
+.construction-lesson .run-tests-button:disabled {
+  cursor: wait;
+  opacity: .72;
+}
+.construction-lesson .run-tests-status {
+  margin: 10px 0 0;
+  color: var(--status-muted);
+  font: italic .86rem/1.45 Arial, Helvetica, sans-serif;
+}
 .construction-lesson .mermaid-viewport {
   position: relative;
   height: 440px;
@@ -795,6 +825,23 @@ h1, h2, p {
 .construction-lesson .mermaid-viewport .edgeLabel {
   background: #fbfaf7 !important;
   color: var(--status-ink) !important;
+}
+.diagram-step-tooltip {
+  position: fixed;
+  z-index: 10000;
+  box-sizing: border-box;
+  width: 260px;
+  max-width: calc( 100vw - 24px );
+  padding: 8px 10px;
+  border: 1px solid #8794a3;
+  border-radius: 4px;
+  background: #fffbea;
+  color: #172033;
+  box-shadow: 0 4px 12px rgba( 17, 32, 51, .22 );
+  font: 13px/1.45 Arial, Helvetica, sans-serif;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  pointer-events: none;
 }
 @media (max-width: 700px) {
   .construction-lesson .mermaid-viewport { height: 360px;
