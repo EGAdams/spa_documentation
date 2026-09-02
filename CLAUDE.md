@@ -14,6 +14,28 @@ directory layout, generated-page conventions, Construction Status task trees,
 the Mermaid pan/zoom pattern, and the verification workflow this SPA depends
 on. Load it every time, not only when the task appears visual.
 
+## Commit before you stop, every time
+
+This repo has no CI and no reviewer forcing commits, so uncommitted work has
+silently piled up across sessions before -- once to 13 files / 346 lines
+spanning two unrelated features tangled together in the same file, discovered
+only when a change appeared to have been "reverted" that had actually just
+never been committed. `git log` / `HEAD` is only the source of truth for
+"what's actually here" if commits happen; an uncommitted working tree is
+scratch space nobody is reading, and the next session (or the next hour of
+this one) has no way to tell it apart from finished work.
+
+- Run `git status` and `git diff --stat` **before** editing any file here --
+  don't assume the working tree matches the last commit or matches what a
+  prior message in this conversation described.
+- Commit finished, coherent chunks of work as you go rather than batching
+  everything to the end of a session. A commit is a checkpoint; small ones
+  are cheap.
+- If you find a file's uncommitted diff mixes two unrelated changes, split
+  it before committing (reconstruct the intermediate state and commit each
+  piece with its own message) rather than committing them tangled together
+  or discarding either one.
+
 ## Commands
 
 ```bash
