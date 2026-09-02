@@ -353,14 +353,28 @@ h1, h2, p {
   letter-spacing: -.025em;
 }
 
-/* The lesson's own file on disk, under the title. Georgia 12pt as authored;
-   break-all so a long path never widens the masthead on a narrow screen. */
+/* The full path to index.html, under the title -- click to copy it to the
+   clipboard. Georgia 13pt as authored; break-all so a long path never widens
+   the masthead on a narrow screen. It's a <button>, not an <a>, since it has
+   no href to navigate to -- only a click-to-copy action. */
 .construction-lesson-path {
+  display: block;
   margin: 0 0 10px;
+  padding: 0;
+  border: 0;
+  background: none;
   opacity: .85;
   color: #fff;
-  font: 12pt/1.45 Georgia, "Times New Roman", serif;
+  font: 13pt/1.45 Georgia, "Times New Roman", serif;
+  text-align: left;
+  text-decoration: underline dotted;
   word-break: break-all;
+  cursor: pointer;
+}
+
+.construction-lesson-path:hover,
+.construction-lesson-path:focus-visible {
+  opacity: 1;
 }
 
 .construction-status-edition,

@@ -172,6 +172,36 @@ function executeScripts( container ) {
   } );
 }
 
+// Clipboard writes on Android Chrome are unreliable through the async
+// Clipboard API alone (it silently no-ops outside a secure context, and some
+// WebViews withhold the permission); a hidden-textarea + execCommand("copy")
+// fallback is what actually lands the text on the clipboard there.
+function copyTextToClipboard( text, onDone ) {
+  if ( window.isSecureContext && navigator.clipboard && navigator.clipboard.writeText ) {
+    navigator.clipboard.writeText( text ).then( onDone ).catch( () => legacyCopyToClipboard( text, onDone ) );
+  } else {
+    legacyCopyToClipboard( text, onDone );
+  }
+}
+
+function legacyCopyToClipboard( text, onDone ) {
+  const textarea = document.createElement( "textarea" );
+  textarea.value = text;
+  textarea.setAttribute( "readonly", "" );
+  textarea.style.position = "fixed";
+  textarea.style.left = "-1000px";
+  document.body.appendChild( textarea );
+  textarea.select();
+  textarea.setSelectionRange( 0, text.length );
+  try {
+    document.execCommand( "copy" );
+  } catch ( err ) {
+    // Nothing more we can do; the button label simply won't confirm.
+  }
+  document.body.removeChild( textarea );
+  onDone();
+}
+
 // Mermaid figures inside an authored lesson. This used to be an inline
 // <script> in every lesson page; it lives here so the pages stay short and
 // only one copy has to be kept correct.
@@ -669,10 +699,19 @@ function renderConstructionTextbookTask( focus, task ) {
   // A lesson may name its own document title; the row's <strong> is the fallback.
   title.textContent = constructionTaskLesson( task )?.dataset.lessonTitle
     || constructionTaskTitle( task );
-  const sourcePath = document.createElement( "p" );
+  const sourcePath = document.createElement( "button" );
+  sourcePath.type = "button";
   sourcePath.className = "construction-lesson-path";
-  const statusTab = detailTabs.find( ( tab ) => tab.key === "status" );
-  sourcePath.textContent = `${DOC_ROOT}/${filePath( statusTab.file )}`;
+  const indexPath = `${DOC_ROOT}/index.html`;
+  sourcePath.textContent = indexPath;
+  sourcePath.title = "Click to copy this path";
+  sourcePath.setAttribute( "aria-label", `Copy path ${indexPath} to clipboard` );
+  sourcePath.addEventListener( "click", () => {
+    copyTextToClipboard( indexPath, () => {
+      sourcePath.textContent = "Copied to clipboard";
+      setTimeout( () => { sourcePath.textContent = indexPath; }, 1500 );
+    } );
+  } );
   const edition = document.createElement( "p" );
   edition.className = "construction-lesson-edition";
   const objectName = focus.dataset.constructionObject
