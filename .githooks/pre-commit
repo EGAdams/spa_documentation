@@ -1,12 +1,26 @@
 #!/bin/sh
 # Blocks a commit that leaves Construction Status pages inconsistent -- see
-# skills/construction-status-queue-management/SKILL.md. Only runs the
-# checker when a staged file could plausibly be a Construction Status page,
-# so commits elsewhere in the repo pay nothing.
+# skills/construction-status-queue-management/SKILL.md. Also warns (does not
+# block) about files left dirty outside this commit -- see CLAUDE.md's
+# "Commit before you stop, every time": a whole feature once sat uncommitted
+# and tangled with unrelated work for over a day because nothing flagged it.
 
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root" || exit 1
 
+# --- leftover-dirty-file warning (always runs, never blocks) --------------
+# Porcelain lines are XY<path>: X is the staged status, Y the worktree
+# status. A non-space Y (including "??") means something outside this
+# commit is still dirty -- a clean "M " (X=M, Y=space) is fully staged.
+leftover=$(git status --porcelain | grep -E '^.[^ ]' || true)
+if [ -n "$leftover" ]; then
+    leftover_count=$(echo "$leftover" | wc -l | tr -d ' ')
+    echo "pre-commit: note -- $leftover_count file(s) outside this commit are still dirty or untracked:"
+    echo "$leftover" | sed 's/^/pre-commit:   /'
+    echo "pre-commit: not blocking, but consider committing or stashing them too -- uncommitted work left sitting is how features end up silently tangled together (see CLAUDE.md)."
+fi
+
+# --- Construction Status consistency check (blocks on failure) ------------
 staged=$(git diff --cached --name-only --diff-filter=ACM)
 echo "$staged" | grep -qE '(basic_agent_construction_status|construction-status-queue-management)' || exit 0
 
