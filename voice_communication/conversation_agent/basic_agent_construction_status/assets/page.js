@@ -255,8 +255,46 @@
     }
   }
 
+  function wireProjectTerminalButtons() {
+    document.querySelectorAll( "button[data-open-project-terminal]" ).forEach( ( button ) => {
+      if ( button.dataset.projectTerminalWired === "true" ) return;
+      button.dataset.projectTerminalWired = "true";
+
+      const status = button.parentElement.querySelector( ".project-terminal-status" );
+      const idleLabel = button.textContent;
+      button.addEventListener( "click", async () => {
+        button.disabled = true;
+        button.textContent = "Opening Terminal…";
+        if ( status ) {
+          status.hidden = false;
+          status.textContent = "Opening Windows Terminal in the Interface File project…";
+        }
+
+        try {
+          const response = await fetch( button.dataset.apiPath, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "{}",
+          } );
+          const result = await response.json();
+          if ( !response.ok || !result.ok ) {
+            throw new Error( result.error || `server returned ${response.status}` );
+          }
+          button.textContent = idleLabel;
+          if ( status ) status.textContent = "Windows Terminal opened in this project's directory.";
+        } catch ( error ) {
+          button.textContent = idleLabel;
+          if ( status ) status.textContent = `Could not open Windows Terminal: ${error.message}`;
+        } finally {
+          button.disabled = false;
+        }
+      } );
+    } );
+  }
+
   window.addEventListener( "DOMContentLoaded", () => {
     renderLessonDiagrams();
     wireRunTestsButtons();
+    wireProjectTerminalButtons();
   } );
 } )();

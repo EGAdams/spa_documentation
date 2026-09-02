@@ -74,7 +74,7 @@
 <div class="table-wrap"><table>
 <thead><tr><th>Catalog</th><th>Plug-in points it publishes</th><th>Count</th></tr></thead>
 <tbody>
-<tr><td><code>interfaces/index.ts</code><br/><small>browser side</small></td><td><code>IConversationAgent</code>, <code>IConversationCoordinator</code>, <code>IVoiceDesignRule</code>, <code>IInputDraft</code>, <code>ILanguageProcessor</code>, <code>ILettaAgentAdapter</code>, <code>INoteCommandChannel</code>, <code>IPipecatServiceClient</code>, <code>IRouteStrategy</code>, <code>ISpokenOutputPolicy</code>, <code>IToyotaVoiceApplication</code>, <code>IVoiceHealthObserver</code>, <code>IVoiceSession</code></td><td>13<br/><small>+ 13 contract types</small></td></tr>
+<tr><td><code>interfaces/index.ts</code><br/><small>browser side</small></td><td><code>IConversationAgent</code>, <code>IConversationCoordinator</code>, <code>IVoiceDesignRule</code>, <code>IInputDraft</code>, <code>ILanguageProcessor</code>, <code>INoteCommandChannel</code>, <code>IPipecatServiceClient</code>, <code>IRouteStrategy</code>, <code>ISpokenOutputPolicy</code>, <code>IToyotaVoiceApplication</code>, <code>IVoiceHealthObserver</code>, <code>IVoiceSession</code></td><td>12<br/><small>+ 13 contract types &mdash; <code>LettaAgentAdapter</code> is a class now, so it no longer lives in the interface catalog</small></td></tr>
 <tr><td><code>interfaces/__init__.py</code><br/><small>service side</small></td><td><code>AudioCapture</code>, <code>DetectionInterface</code>, <code>PipecatLocalService</code>, <code>PipelineFactory</code>, <code>SpeechSynthesizer</code>, <code>TranscriptionStrategy</code></td><td>6<br/><small>+ 11 models</small></td></tr>
 </tbody>
 </table></div>

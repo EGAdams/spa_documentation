@@ -29,7 +29,7 @@
     <div class="construction-lesson-body">
 <blockquote class="construction-lesson-callout">
 <span class="construction-lesson-callout-label">What this step is for</span>
-<strong>Turn ILettaAgentAdapter from a reserved name into a class the browser can actually construct.</strong>
+<strong>Turn LettaAgentAdapter from a throwing stub into a class the browser can actually use.</strong>
 </blockquote>
 <section>
 <h2>1. What this stage actually means</h2>
@@ -37,7 +37,7 @@
 </section>
 <section>
 <h2>2. What exists today</h2>
-<p>A name and a promise: <code>interface ILettaAgentAdapter extends IConversationAgent {}</code>, which adds nothing and implements nothing. Every TypeScript file in this package is still type-only, so this stage also introduces the package's first emitted JavaScript.</p>
+<p>A shell and a promise: <code>class LettaAgentAdapter implements IConversationAgent</code>, whose <code>submit()</code> exists only to throw. Every other TypeScript file in this package is still type-only, so this stage also introduces the package's first emitted JavaScript.</p>
 </section>
 <section>
 <h2>3. What is still missing</h2>

@@ -797,6 +797,21 @@ h1, h2, p {
   cursor: wait;
   opacity: .72;
 }
+.construction-lesson .project-terminal-control {
+  margin: 0 0 10px;
+}
+.construction-lesson .open-project-terminal-button {
+  min-width: 0;
+  min-height: 22px;
+  padding: 3px 11px;
+  font-size: .75rem;
+  box-shadow: 0 1px 3px rgba( 23, 54, 93, .2 );
+}
+.construction-lesson .project-terminal-status {
+  margin: 6px 0 0;
+  color: #ffffff;
+  font: italic .78rem/1.35 Arial, Helvetica, sans-serif;
+}
 .construction-lesson .run-tests-status {
   margin: 10px 0 0;
   color: var(--status-muted);

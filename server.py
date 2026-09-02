@@ -15,6 +15,9 @@ Same static-file behavior as `python3 -m http.server`, plus local API routes:
     POST /api/run-interface-file-tests
         -> { "ok": bool, "terminal": "Windows Terminal", "profile": "Ubuntu-26.04" }
 
+    POST /api/open-interface-file-project-terminal
+        -> { "ok": bool, "terminal": "Windows Terminal", "profile": "Ubuntu-26.04" }
+
 /api/git-status runs `git status --porcelain` on that item's real source file
 (see doc_source_map.py for the item-path -> source-file mapping) and also
 checks whether the item's generated docs (Source / Class Diagram / Sequence
@@ -53,6 +56,14 @@ UPDATE_SCRIPT = DOCS_ROOT / "update_documentation_agent.py"
 RUNS_DIR = DOCS_ROOT / ".update_runs"
 AGENT_BLOCKS_ROOT = DOCS_ROOT.parent
 INTERFACE_FILE_TEST_SCRIPT = DOCS_ROOT / "scripts" / "run_interface_file_tests.sh"
+INTERFACE_FILE_PROJECT_DIR = (
+    DOCS_ROOT
+    / "voice_communication"
+    / "conversation_agent"
+    / "basic_agent_construction_status"
+    / "declare_the_plug_in_point"
+    / "interface_file"
+)
 WINDOWS_TERMINAL_PROFILE = "Ubuntu-26.04"
 WSL_DISTRO = "Ubuntu-26.04"
 WINDOWS_MOUNT_ROOT = Path( "/mnt" )
@@ -178,13 +189,15 @@ def _windows_terminal_environment() -> dict:
     return env
 
 
-def _open_interface_file_test_terminal() -> None:
+def _open_windows_terminal(
+    working_directory: Path,
+    title: str,
+    command: tuple[ str, ... ] = (),
+) -> None:
     windows_terminal = _find_windows_executable( "wt.exe" )
     wsl = _find_windows_executable( "wsl.exe" )
     if windows_terminal is None or wsl is None:
         raise RuntimeError( "Windows Terminal or WSL is not available from this environment" )
-    if not INTERFACE_FILE_TEST_SCRIPT.is_file():
-        raise RuntimeError( "Interface File test script is missing" )
     launch_env = _windows_terminal_environment()
     if not launch_env.get( "WSL_INTEROP" ) or not launch_env.get( "WT_SESSION" ):
         raise RuntimeError(
@@ -193,30 +206,30 @@ def _open_interface_file_test_terminal() -> None:
 
     # The browser cannot start a desktop application itself. This fixed,
     # argument-only launch is deliberately server-side: no command or path is
-    # accepted from the request. The script ends with `exec bash`, leaving the
-    # Ubuntu tab open and usable after every check finishes.
+    # accepted from the request.
+    terminal_arguments = [
+        windows_terminal,
+        "-w",
+        "new",
+        "new-tab",
+        "--profile",
+        WINDOWS_TERMINAL_PROFILE,
+        "--title",
+        title,
+        # This is a command for Windows Terminal to resolve on the Windows
+        # side. Passing the mounted Linux path (/mnt/c/.../wsl.exe) makes
+        # the terminal tab exit before the WSL command ever starts.
+        "wsl.exe",
+        "-d",
+        WSL_DISTRO,
+        "--cd",
+        str( working_directory ),
+    ]
+    if command:
+        terminal_arguments.extend([ "--", *command ])
+
     terminal_process = subprocess.Popen(
-        [
-            windows_terminal,
-            "-w",
-            "new",
-            "new-tab",
-            "--profile",
-            WINDOWS_TERMINAL_PROFILE,
-            "--title",
-            "Interface File Tests",
-            # This is a command for Windows Terminal to resolve on the Windows
-            # side. Passing the mounted Linux path (/mnt/c/.../wsl.exe) makes
-            # the terminal tab exit before the WSL command ever starts.
-            "wsl.exe",
-            "-d",
-            WSL_DISTRO,
-            "--cd",
-            str( AGENT_BLOCKS_ROOT ),
-            "--",
-            "bash",
-            str( INTERFACE_FILE_TEST_SCRIPT ),
-        ],
+        terminal_arguments,
         cwd=str( DOCS_ROOT ),
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
@@ -226,7 +239,36 @@ def _open_interface_file_test_terminal() -> None:
     threading.Thread( target=terminal_process.wait, daemon=True ).start()
 
 
+def _open_interface_file_test_terminal() -> None:
+    if not INTERFACE_FILE_TEST_SCRIPT.is_file():
+        raise RuntimeError( "Interface File test script is missing" )
+    # The script ends with `exec bash`, leaving the Ubuntu tab open and usable
+    # after every check finishes.
+    _open_windows_terminal(
+        AGENT_BLOCKS_ROOT,
+        "Interface File Tests",
+        ( "bash", str( INTERFACE_FILE_TEST_SCRIPT ) ),
+    )
+
+
+def _open_interface_file_project_terminal() -> None:
+    if not INTERFACE_FILE_PROJECT_DIR.is_dir():
+        raise RuntimeError( "Interface File documentation directory is missing" )
+    _open_windows_terminal(
+        INTERFACE_FILE_PROJECT_DIR,
+        "Interface File Project",
+    )
+
+
 class DocsRequestHandler( SimpleHTTPRequestHandler ):
+    # SimpleHTTPRequestHandler sends no Cache-Control header, so browsers
+    # fall back to heuristic caching off Last-Modified and can silently
+    # serve a stale copy of a page that was just edited. These docs are
+    # edited constantly, so force revalidation on every request instead.
+    def end_headers( self ) -> None:
+        self.send_header( "Cache-Control", "no-cache" )
+        super().end_headers()
+
     def do_GET( self ) -> None:
         parsed = urllib.parse.urlparse( self.path )
         if parsed.path == "/api/git-status":
@@ -244,6 +286,9 @@ class DocsRequestHandler( SimpleHTTPRequestHandler ):
             return
         if parsed.path == "/api/run-interface-file-tests":
             self._handle_run_interface_file_tests()
+            return
+        if parsed.path == "/api/open-interface-file-project-terminal":
+            self._handle_open_interface_file_project_terminal()
             return
         self.send_error( 404 )
 
@@ -295,6 +340,20 @@ class DocsRequestHandler( SimpleHTTPRequestHandler ):
             "ok": True,
             "terminal": "Windows Terminal",
             "profile": WINDOWS_TERMINAL_PROFILE,
+        } )
+
+    def _handle_open_interface_file_project_terminal( self ) -> None:
+        try:
+            _open_interface_file_project_terminal()
+        except ( OSError, RuntimeError ) as error:
+            self._send_json( { "ok": False, "error": str( error ) }, 503 )
+            return
+
+        self._send_json( {
+            "ok": True,
+            "terminal": "Windows Terminal",
+            "profile": WINDOWS_TERMINAL_PROFILE,
+            "directory": str( INTERFACE_FILE_PROJECT_DIR ),
         } )
 
     def _handle_run_update_status( self, parsed: urllib.parse.ParseResult ) -> None:

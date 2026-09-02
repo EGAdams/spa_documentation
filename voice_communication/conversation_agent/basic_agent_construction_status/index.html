@@ -66,7 +66,7 @@
 <li><code>voice_communication/typescript_contracts/contracts.ts</code> defines <code>GenerationId = number</code> and five <code>AgentEventKind</code> values: <code>reasoning</code>, <code>assistant_text</code>, <code>tool</code>, <code>terminal</code>, <code>error</code>.</li>
 <li><code>npm run typecheck</code> (<code>tsc -p tsconfig.json</code>) passes, so the declared contract is at least internally consistent.</li>
 <li><code>claude_agent_adapter/</code> in the parent workspace is a real, working implementation of the same plug-in point in Python: <code>ports.py</code> holds the <code>Protocol</code>, <code>adapter.py</code> streams events out of <code>claude-agent-sdk</code>, and <code>tests/test_adapter.py</code> reports <strong>4/4 passed</strong> offline with no API key.</li>
-<li><code>letta_agent_adapter.ts</code> is still <code>interface ILettaAgentAdapter extends IConversationAgent {}</code> — a name reserved for an adapter that does not exist yet.</li>
+<li><code>letta_agent_adapter.ts</code> is now <code>class LettaAgentAdapter implements IConversationAgent</code>, whose <code>submit()</code> is a stub that only throws — the shape exists, the behavior does not.</li>
 <li>Three copies of the event shape have drifted: TypeScript's <code>AgentEvent</code> requires <code>sessionId</code>, <code>voice_communication/pydantic_models/models.py</code> requires <code>session_id: UUID</code>, and the Python adapter's local copy has no session field at all and only two of the five kinds.</li>
 </ul>
 <h2>4. The stage board</h2>

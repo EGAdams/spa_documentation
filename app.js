@@ -399,6 +399,82 @@ function wireRunTestsButtons( container ) {
   } );
 }
 
+function wireProjectTerminalButtons( container ) {
+  container.querySelectorAll( "button[data-open-project-terminal]" ).forEach( ( button ) => {
+    if ( button.dataset.projectTerminalWired === "true" ) return;
+    button.dataset.projectTerminalWired = "true";
+
+    const status = button.parentElement.querySelector( ".project-terminal-status" );
+    const idleLabel = button.textContent;
+    button.addEventListener( "click", async () => {
+      button.disabled = true;
+      button.textContent = "Opening Terminal…";
+      if ( status ) {
+        status.hidden = false;
+        status.textContent = "Opening Windows Terminal in the Interface File project…";
+      }
+
+      try {
+        const response = await fetch( button.dataset.apiPath, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        } );
+        const result = await response.json();
+        if ( !response.ok || !result.ok ) {
+          throw new Error( result.error || `server returned ${response.status}` );
+        }
+        button.textContent = idleLabel;
+        if ( status ) status.textContent = "Windows Terminal opened in this project's directory.";
+      } catch ( error ) {
+        button.textContent = idleLabel;
+        if ( status ) status.textContent = `Could not open Windows Terminal: ${error.message}`;
+      } finally {
+        button.disabled = false;
+      }
+    } );
+  } );
+}
+
+function rebaseCanonicalLessonUrls( article, sourceUrl ) {
+  [
+    [ "[href]", "href" ],
+    [ "[src]", "src" ],
+    [ "[data-api-path]", "data-api-path" ],
+  ].forEach( ( [ selector, attribute ] ) => {
+    article.querySelectorAll( selector ).forEach( ( element ) => {
+      const value = element.getAttribute( attribute );
+      if ( value ) element.setAttribute( attribute, new URL( value, sourceUrl ).href );
+    } );
+  } );
+}
+
+async function renderCanonicalConstructionLesson( focus, sourcePath ) {
+  focus.innerHTML = '<p class="placeholder">Loading the canonical lesson…</p>';
+  try {
+    const sourceUrl = new URL( sourcePath, document.baseURI );
+    const response = await fetch( sourceUrl, { cache: "no-store" } );
+    if ( !response.ok ) throw new Error( `server returned ${response.status}` );
+
+    const sourceDocument = new DOMParser().parseFromString( await response.text(), "text/html" );
+    const sourceArticle = sourceDocument.querySelector( "article.construction-lesson" );
+    if ( !sourceArticle ) throw new Error( "canonical lesson article is missing" );
+
+    const article = document.importNode( sourceArticle, true );
+    rebaseCanonicalLessonUrls( article, sourceUrl );
+    focus.replaceChildren( article );
+    executeScripts( focus );
+    renderLessonDiagrams( focus );
+    wireRunTestsButtons( focus );
+    wireProjectTerminalButtons( focus );
+  } catch ( error ) {
+    const message = document.createElement( "p" );
+    message.className = "placeholder";
+    message.textContent = `Could not load the canonical lesson: ${error.message}`;
+    focus.replaceChildren( message );
+  }
+}
+
 function renderLessonDiagrams( container ) {
   const figures = Array.from( container.querySelectorAll( ".mermaid-figure" ) );
   if ( figures.length === 0 ) return;
@@ -683,6 +759,11 @@ function renderConstructionTextbookTask( focus, task ) {
   const children = directConstructionTasks( task );
   const scopedTasks = [ task, ...Array.from( task.querySelectorAll( "li[data-task-id]" ) ) ];
   const counts = constructionStatusCounts( scopedTasks );
+  const lesson = constructionTaskLesson( task );
+  if ( lesson?.dataset.lessonSrc ) {
+    renderCanonicalConstructionLesson( focus, lesson.dataset.lessonSrc );
+    return;
+  }
 
   const article = document.createElement( "article" );
   article.className = "construction-lesson";
@@ -697,7 +778,7 @@ function renderConstructionTextbookTask( focus, task ) {
   badge.textContent = constructionStatusWord( status );
   const title = document.createElement( "h1" );
   // A lesson may name its own document title; the row's <strong> is the fallback.
-  title.textContent = constructionTaskLesson( task )?.dataset.lessonTitle
+  title.textContent = lesson?.dataset.lessonTitle
     || constructionTaskTitle( task );
   const sourcePath = document.createElement( "button" );
   sourcePath.type = "button";
@@ -737,7 +818,6 @@ function renderConstructionTextbookTask( focus, task ) {
   keyIdea.append( keyLabel, purpose );
   body.appendChild( keyIdea );
 
-  const lesson = constructionTaskLesson( task );
   if ( lesson ) {
     Array.from( lesson.children ).forEach( ( section ) => {
       body.appendChild( section.cloneNode( true ) );
