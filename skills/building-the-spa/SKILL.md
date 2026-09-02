@@ -95,6 +95,11 @@ adding per-object JavaScript. The page itself is the source of truth:
   nav labels and child rosters keep the short row text. Use it to say what a task means,
   what exists today, what is missing, how we will know it is done, and the next
   concrete action; without it a task still renders, just generically.
+- The Interface File task is intentionally different: its lesson source of truth
+  is `basic_agent_construction_status/declare_the_plug_in_point/interface_file/index.html`.
+  Its task entry in `basic_agent_construction_status.html` contains only a
+  `data-lesson-src` reference. Edit the leaf `index.html`; never duplicate its
+  article in the overall Conversation Agent plan.
 - **A lesson's Mermaid figures need no `<script>` of their own.** Author the
   markup only -- `.mermaid-figure[data-diagram]` > `.diagram-toolbar` +
   `.mermaid-viewport` > `.mermaid-canvas` > `pre.mermaid` -- and `app.js`'s
@@ -155,6 +160,21 @@ the same end-to-end sequence.
 
 Use `voice_communication/conversation_agent/basic_agent_construction_status.html`
 as the working reference.
+
+That file owns the overall IConversationAgent plan and task hierarchy. The
+Interface File lesson is authored separately at
+`basic_agent_construction_status/declare_the_plug_in_point/interface_file/index.html`
+and is loaded into the plan through its task's `data-lesson-src` reference.
+
+Cross-item "what's next" sequencing (the stage board's ordered queue, and
+what each lesson's "what would bring work back to this page" list says) is
+its own recurring chore with its own failure mode — the same queue duplicated
+across lessons drifting out of sync. Load the `construction-status-queue-management`
+skill before touching any of that, rather than re-deriving the convention. It
+also documents `check_construction_status_consistency.py`, a stdlib script at
+the repo root that flags exactly this kind of drift (status mismatches,
+broken lesson/queue links, duplicated queue tables) — run it after editing
+any plan file or the lessons it points at.
 
 ## Directory layout mirrors `sections` in app.js
 Each section key in `app.js`'s `sections` object is expected to have a same-named

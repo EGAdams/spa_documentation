@@ -106,7 +106,69 @@
       <p>Not &ldquo;the next area&rdquo; &mdash; the next thing to type. Open <strong>Stage 2 &rsaquo; Reconcile the three AgentEvent copies</strong> in the sidebar. It asks one decision: does <code>AgentEvent</code> carry a session id or not? Every later stage inherits that answer, which is why nothing downstream of it has been started.</p>
       <p>Stages 3, 4, and 5 are deliberately left cold. Starting a TypeScript adapter before the event shape settles would mean writing the translation layer twice.</p>
 
-      <h2>6. How to read the rest of this plan</h2>
+      <h2 id="next-steps">6. What's next, in the order it unblocks</h2>
+      <p>Section 5 names the single next action. This is the same queue in full: every remaining item across stages 2&ndash;5, in the order each one has to be settled before the next can be built without guessing.</p>
+      <blockquote class="construction-status-callout principle">
+        <span class="construction-status-callout-label">Work on this one first</span>
+        <strong>Reconcile the three <code>AgentEvent</code> copies. Every item below streams that type across the boundary, so until the three copies agree, anything built on top of them is built on a shape that is about to change.</strong>
+      </blockquote>
+      <div class="construction-status-table-wrap">
+        <table class="construction-status-table">
+          <thead><tr><th>Order</th><th>Object to work on</th><th>State</th><th>Why it comes here, and what it unblocks</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td><a href="basic_agent_construction_status/prove_with_one_adapter/reconcile_agent_event/index.html">Reconcile the three <code>AgentEvent</code> copies</a><br><em>Stage 2 &middot; step 3</em></td>
+              <td><span class="construction-status-chip status-current">In progress</span></td>
+              <td>TypeScript requires <code>sessionId</code>, <code>pydantic_models/models.py</code> requires <code>session_id: UUID</code>, and the Python adapter's copy has neither plus only two of the five kinds. Settling it &mdash; including deciding whether <code>submit()</code> hands the session id down or the event stops carrying it &mdash; unblocks every row below.</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><a href="basic_agent_construction_status/prove_with_one_adapter/cancellation_rule/index.html">Decide where cancellation lives</a><br><em>Stage 2 &middot; step 4</em></td>
+              <td><span class="construction-status-chip">Not started</span></td>
+              <td>The only decision that can still change the interface file itself. Either interrupting a turn becomes a second method every adapter must implement, or it becomes a separate lifecycle interface. Answer it before an adapter is written, not after two of them exist.</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><a href="basic_agent_construction_status/typescript_adapter/implement_adapter_class/index.html">Implement the <code>LettaAgentAdapter</code> class</a><br><em>Stage 3 &middot; step 1</em></td>
+              <td><span class="construction-status-chip">Not started</span></td>
+              <td><code>letta_agent_adapter.ts</code> is still an empty <code>extends</code> with no body. Python proves the shape is implementable; nothing yet proves it in the browser, where the screen actually lives.</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td><a href="basic_agent_construction_status/typescript_adapter/translate_the_stream/index.html">Translate the Letta stream into <code>AgentEvent</code></a><br><em>Stage 3 &middot; step 2</em></td>
+              <td><span class="construction-status-chip">Not started</span></td>
+              <td>The translation seam where vendor messages become the shared event shape. It can only be written once row 1 has fixed what a legal event looks like.</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td><a href="basic_agent_construction_status/typescript_adapter/contract_tests/index.html">Write contract tests in TypeScript</a><br><em>Stage 3 &middot; step 3</em></td>
+              <td><span class="construction-status-chip">Not started</span></td>
+              <td>Gives the TypeScript side the same offline proof <code>claude_agent_adapter/</code> already gives the Python side, so a future adapter can be checked against the port rather than against a running backend.</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td><a href="basic_agent_construction_status/adopt_in_toyota/replace_direct_request/index.html">Replace Toyota's direct request call</a><br><em>Stage 4 &middot; step 2</em></td>
+              <td><span class="construction-status-chip">Not started</span></td>
+              <td>The first real consumer. Until a screen calls <code>submit()</code>, the interface remains a well-supported hypothesis.</td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td><a href="basic_agent_construction_status/verify_live_turn/index.html">Verify one live voice turn</a><br><em>Stage 5</em></td>
+              <td><span class="construction-status-chip">Not started</span></td>
+              <td>Runs one full turn for real, end to end. It is the only evidence that the arrangement survives contact with a live backend.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>What would bring work back to the Interface File</strong></p>
+      <ul>
+        <li><strong>Row 1 removing the session id from the event.</strong> Then <code>submit()</code> grows a parameter, and <code>conversation_agent.ts</code> changes.</li>
+        <li><strong>Row 2 choosing a second method.</strong> Then cancellation lands on <code>IConversationAgent</code> itself rather than beside it.</li>
+        <li><strong>Row 6 landing.</strong> The interface file's own "how to check this yourself" grep gains a fourth hit, and its "A real screen depends on it" row finally moves off Not started.</li>
+      </ul>
+
+      <h2>7. How to read the rest of this plan</h2>
       <p>The sidebar shows one level at a time. A red corner triangle means the item opens into smaller items; a plain entry is a leaf, small enough to finish and prove in one sitting. Selecting any item replaces this chapter with a lesson about that item alone: what it means, what exists, what is missing, how we will know it is done, and the next concrete action.</p>
       <blockquote class="construction-status-callout principle">
         <span class="construction-status-callout-label">Construction Principle</span>

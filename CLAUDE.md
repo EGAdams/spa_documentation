@@ -104,9 +104,18 @@ objects need a TypeScript lexer and language-appropriate diagrams.
   only cache control this SPA has.
 
 `?embedded=1` adds `body.embedded`, which hides the in-page nav for the
-dashboard iframe (the parent mirrors the nav in its own sidebar). Nav state
-lives in module-level variables (`currentTop`, `itemPath`, `currentDetail`),
-not the URL — there is no routing or history integration.
+dashboard iframe (the parent mirrors the nav in its own sidebar). Normal nav
+state lives in module-level variables (`currentTop`, `itemPath`,
+`currentDetail`) and has no history integration.
+
+## Interface File Construction Status source
+
+`voice_communication/conversation_agent/basic_agent_construction_status.html`
+owns the overall Conversation Agent plan and task navigation. The Interface File
+lesson body has its own source of truth at
+`voice_communication/conversation_agent/basic_agent_construction_status/declare_the_plug_in_point/interface_file/index.html`.
+The plan references that file with `data-lesson-src`; do not copy its lesson body
+back into the plan file.
 
 ## Style
 
