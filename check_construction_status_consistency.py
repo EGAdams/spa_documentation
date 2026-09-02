@@ -52,6 +52,23 @@ QUEUE_ROW_RE = re.compile(
     re.DOTALL,
 )
 
+# task_id -> the data-lesson-src a task's <div class="construction-task-lesson">
+# MUST carry, keyed per plan file. Most lessons are legitimately embedded
+# inline with no leaf file of their own (or, like Event Contracts and
+# Publish Barrel, embedded inline *and* separately mirrored in a standalone
+# leaf page by hand -- that duplication is accepted, see building-the-spa
+# SKILL.md's "Construction Status task trees" section). Only add an entry
+# here for a task that CLAUDE.md documents as having promoted its leaf file
+# to be the sole source of truth -- this is what would have caught the plan
+# silently reverting to a stale 245-line inline copy instead of the
+# data-lesson-src reference it was supposed to use. Keep entries here in
+# sync with CLAUDE.md's "Interface File Construction Status source" note.
+REQUIRED_LESSON_SRC = {
+    "voice_communication/conversation_agent/basic_agent_construction_status.html": {
+        "stage-1a": "voice_communication/conversation_agent/basic_agent_construction_status/declare_the_plug_in_point/interface_file/index.html",
+    },
+}
+
 
 @dataclass
 class Finding:
@@ -176,12 +193,44 @@ def check_duplicate_queue_tables( plan_file: Path ) -> list[ Finding ]:
     return findings
 
 
+def check_required_lesson_src( plan_file: Path, text: str ) -> list[ Finding ]:
+    """A task in REQUIRED_LESSON_SRC has promoted its leaf file to be the
+    sole source of truth; if the plan's copy of that task doesn't carry
+    the matching data-lesson-src, it has regressed to (or never left)
+    embedding its own inline copy -- see the constant's docstring above.
+    """
+    required = REQUIRED_LESSON_SRC.get( _display( plan_file ).as_posix() )
+    if not required:
+        return []
+
+    tasks_by_id = { task[ "task_id" ]: task for task in _parse_tasks( text ) }
+    findings = []
+    for task_id, expected_src in required.items():
+        task = tasks_by_id.get( task_id )
+        if task is None:
+            findings.append( Finding(
+                "MISSING_REQUIRED_LESSON_SRC", plan_file,
+                f'task {task_id!r} listed in REQUIRED_LESSON_SRC no longer exists in this plan '
+                f'-- update the constant if the task was renamed or removed',
+            ) )
+            continue
+        if task[ "lesson_src" ] != expected_src:
+            findings.append( Finding(
+                "MISSING_REQUIRED_LESSON_SRC", plan_file,
+                f'task "{task[ "label" ]}" ({task_id}) must use data-lesson-src="{expected_src}" '
+                f'per CLAUDE.md, but has {task[ "lesson_src" ]!r} -- the plan may be embedding a '
+                f'stale duplicate instead of referencing the leaf file',
+            ) )
+    return findings
+
+
 def check_plan_file( plan_file: Path ) -> list[ Finding ]:
     text = plan_file.read_text( encoding="utf-8" )
     return [
         *check_task_lesson_agreement( plan_file, text ),
         *check_queue_table( plan_file, text ),
         *check_duplicate_queue_tables( plan_file ),
+        *check_required_lesson_src( plan_file, text ),
     ]
 
 

@@ -100,6 +100,16 @@ It exits 1 and prints one line per finding if it sees:
 - **`DUPLICATE_QUEUE_TABLE`** — a lesson under a plan's own subtree contains
   its own copy of the "Object to work on" queue table instead of a pointer
   back to the plan.
+- **`MISSING_REQUIRED_LESSON_SRC`** — a task listed in the script's
+  `REQUIRED_LESSON_SRC` table (currently just Interface File / `stage-1a`)
+  doesn't carry the `data-lesson-src` it's required to. This is the specific
+  regression that once let the plan silently revert to a 245-line stale
+  inline copy of the Interface File lesson instead of referencing the real
+  file — nothing else in this checker would have caught a *missing*
+  `data-lesson-src` on a task that's still allowed to embed content inline.
+  Whenever a lesson gets promoted to "its leaf file is the sole source of
+  truth, referenced via `data-lesson-src`" (as documented in CLAUDE.md), add
+  its task id to `REQUIRED_LESSON_SRC` in the same change.
 
 It only reads markup — it does not edit anything, and it does not know
 whether a given status is *correct*, only whether two places that claim to
