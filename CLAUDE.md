@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This nested Git repository currently runs as a plain HTML/CSS/JavaScript
 documentation SPA for the parent `agent_blocks` workspace. It has no framework,
-runtime build step, package manifest, or test suite.
+runtime build step, package manifest, or executable test suite.
 
 Before doing any work here, load the `building-the-spa` skill from
 `skills/building-the-spa/SKILL.md`. It defines the navigation drill-down,
@@ -27,10 +27,16 @@ it is a **design skeleton, not an implementation**:
 - `window.__spa` is a typed planned test seam, not a live global yet;
 - all internal TypeScript imports deliberately use emitted `.js` specifiers.
 
-`app_refactor_plan.md` is the authoritative architecture and eight-step
-migration work order. Follow it one committed step at a time. The existing
-`app_refactor_plan.html` records the earlier JavaScript split reasoning and can
-be useful background, but its module layout is no longer authoritative.
+`app_refactor_plan.md` is the authoritative architecture and nine-step work
+order (Step 0 through Step 8). Follow it one committed step at a time.
+`app_refactor_plan.html` is its synchronized visual progress companion.
+
+`app_tests/` is the structural test-design mirror: every one of the 62
+`app/**/*.ts` modules has one `<name>.test.ts` counterpart under the same
+relative directory. Each file names its sole test responsibility and planned
+evidence but implements no assertion. The mirror is a review guide, not test
+coverage. Keep cross-module lifecycle evidence at the owning coordinator,
+composition root, or future browser-integration boundary.
 
 The TypeScript design keeps concrete browser adapters at
 `app/composition-root.ts`, raw `fetch()` isolated to the future
@@ -43,6 +49,7 @@ Type-check the current design with the installed compiler:
 
 ```bash
 /home/adamsl/letta-code/node_modules/.bin/tsc -p app/tsconfig.json
+/home/adamsl/letta-code/node_modules/.bin/tsc -p app_tests/tsconfig.json
 ```
 
 Before browser cutover, the project still needs a repository-local TypeScript
@@ -81,6 +88,9 @@ this one) has no way to tell it apart from finished work.
 
 # Design-only TypeScript check; emits nothing.
 /home/adamsl/letta-code/node_modules/.bin/tsc -p app/tsconfig.json
+
+# Test-design scaffold check; runs no assertions and emits nothing.
+/home/adamsl/letta-code/node_modules/.bin/tsc -p app_tests/tsconfig.json
 
 # Regenerate one leaf's source-derived docs (real Claude Agent SDK call).
 # Needs .venv; ANTHROPIC_API_KEY / ANTHROPIC_BASE_URL must stay UNSET so the

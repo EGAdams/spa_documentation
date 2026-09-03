@@ -1,60 +1,63 @@
-<title>Splitting app.js</title>
+<meta charset="utf-8">
+<title>TypeScript application refactor plan</title>
 <style>
   :root {
     color-scheme: light;
-    --ground:    #fbfaf6;
-    --surface:   #ffffff;
+    --ground: #fbfaf6;
+    --surface: #ffffff;
     --surface-2: #f3f2ec;
-    --ink:       #172033;
-    --ink-soft:  #46536a;
-    --muted:     #6c7a90;
-    --rule:      #dcdfe7;
+    --ink: #172033;
+    --ink-soft: #46536a;
+    --muted: #6c7a90;
+    --rule: #dcdfe7;
     --rule-soft: #e9ebf1;
-    --navy:      #17365d;
-    --navy-ink:  #17365d;
-    --gold:      #b58b36;
-    --ok:        #3d7355;
-    --warn:      #a97c26;
-    --hot:       #a2422c;
-    --code-bg:   #f1f3f7;
+    --navy: #17365d;
+    --blue: #2f5b8c;
+    --gold: #b58b36;
+    --ok: #3d7355;
+    --warn: #a97c26;
+    --hot: #a2422c;
+    --code-bg: #f1f3f7;
   }
+
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       color-scheme: dark;
-      --ground:    #0f1620;
-      --surface:   #16202c;
+      --ground: #0f1620;
+      --surface: #16202c;
       --surface-2: #1b2735;
-      --ink:       #e7ecf3;
-      --ink-soft:  #b9c5d5;
-      --muted:     #8d9cb1;
-      --rule:      #27333f;
+      --ink: #e7ecf3;
+      --ink-soft: #b9c5d5;
+      --muted: #8d9cb1;
+      --rule: #27333f;
       --rule-soft: #1f2b37;
-      --navy:      #7ea8dc;
-      --navy-ink:  #a9c6ea;
-      --gold:      #d7ad5f;
-      --ok:        #6bab86;
-      --warn:      #d7ad5f;
-      --hot:       #d9765c;
-      --code-bg:   #101a25;
+      --navy: #a9c6ea;
+      --blue: #7ea8dc;
+      --gold: #d7ad5f;
+      --ok: #6bab86;
+      --warn: #d7ad5f;
+      --hot: #d9765c;
+      --code-bg: #101a25;
     }
   }
+
   :root[data-theme="dark"] {
     color-scheme: dark;
-    --ground:    #0f1620;
-    --surface:   #16202c;
+    --ground: #0f1620;
+    --surface: #16202c;
     --surface-2: #1b2735;
-    --ink:       #e7ecf3;
-    --ink-soft:  #b9c5d5;
-    --muted:     #8d9cb1;
-    --rule:      #27333f;
+    --ink: #e7ecf3;
+    --ink-soft: #b9c5d5;
+    --muted: #8d9cb1;
+    --rule: #27333f;
     --rule-soft: #1f2b37;
-    --navy:      #7ea8dc;
-    --navy-ink:  #a9c6ea;
-    --gold:      #d7ad5f;
-    --ok:        #6bab86;
-    --warn:      #d7ad5f;
-    --hot:       #d9765c;
-    --code-bg:   #101a25;
+    --navy: #a9c6ea;
+    --blue: #7ea8dc;
+    --gold: #d7ad5f;
+    --ok: #6bab86;
+    --warn: #d7ad5f;
+    --hot: #d9765c;
+    --code-bg: #101a25;
   }
 
   * { box-sizing: border-box; }
@@ -70,641 +73,469 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  .wrap { max-width: 60rem; margin: 0 auto; }
-  .prose { max-width: 40rem; }
+  .wrap { max-width: 64rem; margin: 0 auto; }
 
-  h1, h2, h3, .display {
+  h1, h2, h3 {
     font-family: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-    text-wrap: balance;
     font-weight: 600;
     letter-spacing: -0.005em;
+    text-wrap: balance;
   }
-
-  /* ---- masthead ---- */
-  header.masthead {
-    padding: 4.5rem 0 2rem;
-    border-bottom: 3px double var(--rule);
-    margin-bottom: 3rem;
-  }
-  .eyebrow {
-    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.72rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin: 0 0 1rem;
-  }
-  header.masthead h1 {
-    font-size: clamp(2.4rem, 6vw, 3.6rem);
-    line-height: 1.08;
-    margin: 0 0 1rem;
-  }
-  .standfirst {
-    font-size: 1.16rem;
-    color: var(--ink-soft);
-    max-width: 38rem;
-    margin: 0;
-  }
-
-  .figures {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0;
-    margin-top: 2.5rem;
-    border-top: 1px solid var(--rule);
-    padding-top: 1.25rem;
-  }
-  .figures div {
-    padding-right: 2.25rem;
-    margin-right: 2.25rem;
-    border-right: 1px solid var(--rule-soft);
-  }
-  .figures div:last-child { border-right: 0; margin-right: 0; padding-right: 0; }
-  .figures b {
-    display: block;
-    font-family: ui-serif, "Iowan Old Style", Georgia, serif;
-    font-size: 1.9rem;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    line-height: 1.1;
-    color: var(--navy-ink);
-  }
-  .figures span {
-    display: block;
-    font-size: 0.78rem;
-    color: var(--muted);
-    letter-spacing: 0.03em;
-    margin-top: 0.15rem;
-  }
-
-  /* ---- sections ---- */
-  section { margin: 0 0 4.5rem; }
-  section > h2 {
-    font-size: 1.7rem;
-    margin: 0 0 0.4rem;
-    padding-top: 0.6rem;
-    border-top: 1px solid var(--rule);
-  }
-  .section-note {
-    color: var(--muted);
-    font-size: 0.95rem;
-    margin: 0 0 2rem;
-    max-width: 40rem;
-  }
-  h3 { font-size: 1.15rem; margin: 2rem 0 0.4rem; }
-  p { margin: 0 0 1rem; }
 
   code, .mono {
     font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.86em;
+    font-size: 0.88em;
   }
+
   code {
     background: var(--code-bg);
+    color: var(--navy);
     padding: 0.1em 0.35em;
     border-radius: 3px;
-    color: var(--navy-ink);
   }
 
-  /* ---- composition bar ---- */
-  .bar {
-    display: flex;
-    width: 100%;
-    height: 2.6rem;
-    border: 1px solid var(--rule);
-    overflow: hidden;
-    margin-bottom: 0.6rem;
+  .masthead {
+    border-bottom: 3px double var(--rule);
+    margin-bottom: 3rem;
+    padding: 4.5rem 0 2rem;
   }
-  .bar i {
-    display: block;
-    border-right: 1px solid var(--ground);
-  }
-  .bar i:last-child { border-right: 0; }
-  .bar-scale {
-    display: flex;
-    justify-content: space-between;
-    font-family: ui-monospace, Menlo, Consolas, monospace;
+
+  .eyebrow {
+    color: var(--gold);
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 0.72rem;
-    color: var(--muted);
-    margin-bottom: 2rem;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.92rem;
-  }
-  .scroll-x { overflow-x: auto; }
-  th {
-    text-align: left;
-    font-family: ui-monospace, Menlo, Consolas, monospace;
-    font-size: 0.7rem;
-    letter-spacing: 0.11em;
+    letter-spacing: 0.18em;
+    margin: 0 0 1rem;
     text-transform: uppercase;
-    color: var(--muted);
-    font-weight: 500;
-    padding: 0 0.9rem 0.5rem 0;
-    border-bottom: 1px solid var(--rule);
-    white-space: nowrap;
   }
-  td {
-    padding: 0.7rem 0.9rem 0.7rem 0;
-    border-bottom: 1px solid var(--rule-soft);
-    vertical-align: top;
+
+  .masthead h1 {
+    font-size: clamp(2.4rem, 6vw, 3.8rem);
+    line-height: 1.08;
+    margin: 0 0 1rem;
   }
-  td.num {
-    font-variant-numeric: tabular-nums;
-    font-family: ui-monospace, Menlo, Consolas, monospace;
-    font-size: 0.85rem;
-    white-space: nowrap;
+
+  .standfirst {
     color: var(--ink-soft);
+    font-size: 1.16rem;
+    margin: 0;
+    max-width: 44rem;
   }
-  .swatch {
+
+  .status {
+    border: 1px solid var(--ok);
+    color: var(--ok);
     display: inline-block;
-    width: 0.65rem;
-    height: 0.65rem;
-    margin-right: 0.5rem;
-    vertical-align: baseline;
-  }
-
-  /* ---- findings ---- */
-  .finding {
-    border-left: 3px solid var(--gold);
-    padding: 0 0 0 1.4rem;
-    margin: 0 0 2.5rem;
-    max-width: 42rem;
-  }
-  .finding h3 { margin-top: 0; }
-  .finding .evidence {
-    font-family: ui-monospace, Menlo, Consolas, monospace;
-    font-size: 0.78rem;
-    color: var(--muted);
-    display: block;
-    margin-bottom: 0.5rem;
-    letter-spacing: 0.01em;
-  }
-  .finding.sharp { border-left-color: var(--hot); }
-
-  .verdict {
-    background: var(--surface-2);
-    padding: 0.7rem 1rem;
-    margin-top: 0.9rem;
-    font-size: 0.92rem;
-    border-radius: 2px;
-  }
-  .verdict b {
     font-family: ui-monospace, Menlo, Consolas, monospace;
     font-size: 0.72rem;
     letter-spacing: 0.1em;
+    margin-top: 1.4rem;
+    padding: 0.25rem 0.6rem;
     text-transform: uppercase;
-    color: var(--gold);
-    display: block;
-    margin-bottom: 0.15rem;
   }
 
-  /* ---- module tree ---- */
+  .figures {
+    border-top: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(8rem, 1fr));
+    margin-top: 2rem;
+    padding-top: 1.2rem;
+  }
+
+  .figures div {
+    border-right: 1px solid var(--rule-soft);
+    padding: 0 1.5rem;
+  }
+
+  .figures div:first-child { padding-left: 0; }
+  .figures div:last-child { border-right: 0; }
+
+  .figures b {
+    color: var(--navy);
+    display: block;
+    font-family: ui-serif, "Iowan Old Style", Georgia, serif;
+    font-size: 2rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+
+  .figures span {
+    color: var(--muted);
+    display: block;
+    font-size: 0.78rem;
+    margin-top: 0.15rem;
+  }
+
+  section { margin: 0 0 4.5rem; }
+
+  section > h2 {
+    border-top: 1px solid var(--rule);
+    font-size: 1.75rem;
+    margin: 0 0 0.4rem;
+    padding-top: 0.7rem;
+  }
+
+  .section-note {
+    color: var(--muted);
+    margin: 0 0 2rem;
+    max-width: 45rem;
+  }
+
+  .cards {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    padding: 1.2rem 1.3rem;
+  }
+
+  .card h3 {
+    font-size: 1.05rem;
+    margin: 0 0 0.45rem;
+  }
+
+  .card p { color: var(--ink-soft); margin: 0; }
+  .card.done { border-left: 4px solid var(--ok); }
+  .card.current { border-left: 4px solid var(--gold); }
+  .card.waiting { border-left: 4px solid var(--muted); }
+
   .tree {
     background: var(--surface);
     border: 1px solid var(--rule);
-    padding: 1.6rem 1.4rem;
+    color: var(--ink-soft);
     font-family: ui-monospace, Menlo, Consolas, monospace;
     font-size: 0.82rem;
     line-height: 1.85;
     overflow-x: auto;
+    padding: 1.5rem;
     white-space: pre;
-    color: var(--ink-soft);
   }
-  .tree b { color: var(--navy-ink); font-weight: 600; }
-  .tree em { color: var(--muted); font-style: normal; }
-  .tree u { text-decoration: none; color: var(--gold); }
 
-  /* ---- steps ---- */
-  ol.steps { list-style: none; margin: 0; padding: 0; counter-reset: step; }
+  .tree b { color: var(--navy); }
+  .tree em { color: var(--muted); font-style: normal; }
+  .tree u { color: var(--gold); text-decoration: none; }
+
+  table {
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    width: 100%;
+  }
+
+  .scroll-x { overflow-x: auto; }
+
+  th {
+    border-bottom: 1px solid var(--rule);
+    color: var(--muted);
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    padding: 0 1rem 0.55rem 0;
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  td {
+    border-bottom: 1px solid var(--rule-soft);
+    padding: 0.75rem 1rem 0.75rem 0;
+    vertical-align: top;
+  }
+
+  ol.steps {
+    counter-reset: step -1;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
   ol.steps > li {
+    border-bottom: 1px solid var(--rule-soft);
     counter-increment: step;
     display: grid;
-    grid-template-columns: 3.2rem 1fr;
     gap: 0 1.2rem;
-    padding: 1.4rem 0;
-    border-bottom: 1px solid var(--rule-soft);
+    grid-template-columns: 3.2rem 1fr;
+    padding: 1.2rem 0;
   }
+
   ol.steps > li::before {
+    color: var(--gold);
     content: counter(step, decimal-leading-zero);
     font-family: ui-monospace, Menlo, Consolas, monospace;
-    font-size: 0.95rem;
-    color: var(--gold);
     font-variant-numeric: tabular-nums;
     padding-top: 0.15rem;
   }
-  ol.steps h3 { margin: 0 0 0.3rem; font-size: 1.05rem; }
-  ol.steps p { margin: 0; font-size: 0.94rem; color: var(--ink-soft); }
+
+  ol.steps h3 { font-size: 1.05rem; margin: 0 0 0.25rem; }
+  ol.steps p { color: var(--ink-soft); margin: 0; }
+
   .risk {
-    display: inline-block;
-    font-family: ui-monospace, Menlo, Consolas, monospace;
-    font-size: 0.66rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 0.12rem 0.45rem;
     border: 1px solid currentColor;
     border-radius: 2px;
-    margin-left: 0.6rem;
-    vertical-align: 0.15em;
+    display: inline-block;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    margin-left: 0.55rem;
+    padding: 0.1rem 0.4rem;
+    text-transform: uppercase;
+    vertical-align: 0.1em;
   }
-  .risk.lo { color: var(--ok); }
-  .risk.mid { color: var(--warn); }
-  .risk.hi { color: var(--hot); }
 
-  ul.plain { padding-left: 1.1rem; margin: 0 0 1rem; }
-  ul.plain li { margin-bottom: 0.5rem; }
+  .risk.now { color: var(--gold); }
+  .risk.wait { color: var(--muted); }
+
+  .callout {
+    background: var(--surface-2);
+    border-left: 4px solid var(--hot);
+    margin-top: 1.5rem;
+    padding: 1rem 1.2rem;
+  }
+
+  .callout p { margin: 0; }
+
+  ul { padding-left: 1.2rem; }
+  li { margin-bottom: 0.45rem; }
 
   footer {
     border-top: 3px double var(--rule);
-    padding-top: 1.5rem;
     color: var(--muted);
-    font-size: 0.85rem;
+    font-size: 0.86rem;
+    padding-top: 1.5rem;
+  }
+
+  @media (max-width: 720px) {
+    .cards, .figures { grid-template-columns: 1fr; }
+    .figures div {
+      border-bottom: 1px solid var(--rule-soft);
+      border-right: 0;
+      padding: 0.7rem 0;
+    }
   }
 </style>
 
 <div class="wrap">
-
-<header class="masthead">
-  <p class="eyebrow">spa_documentation &middot; architecture review</p>
-  <h1>Splitting app.js</h1>
-  <p class="standfirst">
-    One 1,301-line script runs the whole documentation SPA: the item catalog, the
-    navigation, the Mermaid renderer, the Construction Status textbook, the git-status
-    poller, and the hash router. Here is what is actually in there, the five structural
-    faults worth naming, and a module split that fixes them in six shippable steps.
-  </p>
-
-  <div class="figures">
-    <div><b>1,301</b><span>lines, one file</span></div>
-    <div><b>62</b><span>top-level declarations</span></div>
-    <div><b>5</b><span>module-level mutables</span></div>
-    <div><b>8</b><span>raw <span class="mono">fetch()</span> call sites</span></div>
-    <div><b>0</b><span>tests</span></div>
-  </div>
-</header>
-
-<section>
-  <h2>Where the 1,301 lines actually go</h2>
-  <p class="section-note">
-    Grouped by responsibility rather than by declaration order. The Construction Status
-    subsystem is nearly a third of the file on its own and is the only part with its own
-    private state machine.
-  </p>
-
-  <div class="bar" role="img" aria-label="Composition of app.js by responsibility: Construction Status 31 percent, Navigation 15 percent, Mermaid 14 percent, Catalog data 10 percent, Content injection 12 percent, Update Documentation 10 percent, Hash routing 4 percent, Bootstrap and state 4 percent.">
-    <i style="width:31.9%; background:#17365d"></i>
-    <i style="width:15.0%; background:#2f5b8c"></i>
-    <i style="width:14.2%; background:#4f80b3"></i>
-    <i style="width:11.8%; background:#b58b36"></i>
-    <i style="width:10.5%; background:#c9a35a"></i>
-    <i style="width:9.9%;  background:#8d9cb1"></i>
-    <i style="width:4.4%;  background:#c9cfd9"></i>
-    <i style="width:2.3%;  background:#e3e7ee"></i>
-  </div>
-  <div class="bar-scale"><span>0</span><span>650 lines</span><span>1,301</span></div>
-
-  <div class="scroll-x">
-  <table>
-    <thead>
-      <tr><th>Responsibility</th><th>Lines</th><th>Approx.</th><th>Entry points</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="swatch" style="background:#17365d"></span>Construction Status subsystem</td>
-        <td class="num">554&ndash;958</td><td class="num">405</td>
-        <td><code>renderConstructionTextbookTask</code>, <code>directConstructionTasks</code>, 20 more</td>
-      </tr>
-      <tr>
-        <td><span class="swatch" style="background:#2f5b8c"></span>Navigation &amp; content routing</td>
-        <td class="num">523&ndash;553, 959&ndash;1093, 1220&ndash;1245</td><td class="num">190</td>
-        <td><code>renderNav</code>, <code>showCurrentContent</code>, <code>selectDetail</code></td>
-      </tr>
-      <tr>
-        <td><span class="swatch" style="background:#4f80b3"></span>Mermaid theme, loader, pan/zoom, tooltips</td>
-        <td class="num">208&ndash;361, 478&ndash;503</td><td class="num">181</td>
-        <td><code>renderLessonDiagrams</code>, <code>wireDiagramPanZoom</code></td>
-      </tr>
-      <tr>
-        <td><span class="swatch" style="background:#b58b36"></span>Catalog data (<code>sections</code>, <code>detailTabs</code>)</td>
-        <td class="num">12&ndash;143</td><td class="num">150</td>
-        <td>pure data &mdash; no behavior at all</td>
-      </tr>
-      <tr>
-        <td><span class="swatch" style="background:#c9a35a"></span>Content injection &amp; button wiring</td>
-        <td class="num">164&ndash;206, 362&ndash;477, 504&ndash;522</td><td class="num">133</td>
-        <td><code>loadFile</code>, <code>executeScripts</code>, the two <code>wire*Buttons</code></td>
-      </tr>
-      <tr>
-        <td><span class="swatch" style="background:#8d9cb1"></span>Update Documentation / server API</td>
-        <td class="num">1094&ndash;1219</td><td class="num">126</td>
-        <td><code>refreshGitStatus</code>, <code>startUpdateRun</code>, <code>pollUpdateRun</code></td>
-      </tr>
-      <tr>
-        <td><span class="swatch" style="background:#c9cfd9"></span>Hash deep-link routing</td>
-        <td class="num">1246&ndash;1301</td><td class="num">56</td>
-        <td><code>parseHashRoute</code>, <code>applyHashRoute</code></td>
-      </tr>
-      <tr>
-        <td><span class="swatch" style="background:#e3e7ee"></span>Bootstrap, DOM handles, mutable state</td>
-        <td class="num">1&ndash;11, 144&ndash;162</td><td class="num">30</td>
-        <td><code>content</code>, <code>nav</code>, <code>currentTop</code>, <code>itemPath</code>&hellip;</td>
-      </tr>
-    </tbody>
-  </table>
-  </div>
-</section>
-
-<section>
-  <h2>Five faults worth naming</h2>
-  <p class="section-note">
-    Each one is checkable against the current file. The last two have already produced
-    real inconsistencies in shipped behavior.
-  </p>
-
-  <div class="finding">
-    <h3>Navigation state is five loose variables that every layer reaches into</h3>
-    <span class="evidence">app.js:147&ndash;159 &middot; 12 hand-placed <span class="mono">renderNav()</span> calls &middot; 6 hand-placed <span class="mono">resetConstructionTaskNav()</span> calls</span>
-    <p>
-      <code>currentTop</code>, <code>itemPath</code>, <code>currentDetail</code>,
-      <code>constructionTaskPath</code> and <code>focusedConstructionTask</code> are
-      module-level <code>let</code>s. <code>filePath()</code> and <code>itemKey()</code>
-      read them implicitly, so their results depend on invisible ambient state. Every
-      command &mdash; <code>goHome</code>, <code>selectSection</code>, <code>selectNode</code>,
-      <code>goUp</code>, <code>selectDetail</code>, <code>applyHashRoute</code> &mdash;
-      re-implements the same ritual: mutate, reset construction nav, call
-      <code>renderNav()</code>, call <code>showCurrentContent()</code>. Forgetting one line
-      of that ritual is a silent bug with no warning.
+  <header class="masthead">
+    <p class="eyebrow">spa_documentation · TypeScript refactor</p>
+    <h1>Application and test design skeleton</h1>
+    <p class="standfirst">
+      The production SPA still runs the 1,301-line <code>app.js</code>. The
+      strict TypeScript application design and its one-for-one test-design
+      mirror now exist for team review; no runtime migration has started.
     </p>
-    <div class="verdict"><b>Observer</b>
-      A <code>NavState</code> object owns the fields and publishes on change; the nav view and
-      the content host subscribe. The ritual is enforced by the type, not by discipline.
-    </div>
-  </div>
+    <span class="status">Review skeleton complete · September 3, 2026</span>
 
-  <div class="finding">
-    <h3>Detail tabs are polymorphic in everything but code</h3>
-    <span class="evidence">app.js:995, 1117, 1212, 1227 &mdash; four functions branching on the same two key strings</span>
-    <p>
-      <code>detailTabs</code> is a flat list of <code>{ key, label, file }</code>, so every
-      tab-specific behavior has to be reintroduced as a string comparison somewhere else:
-      <code>renderNav</code> asks whether the key is <code>"status"</code>,
-      <code>selectDetail</code> asks again, <code>applyGitStatusUI</code> asks whether it is
-      <code>"update_docs"</code>, and <code>pollUpdateRun</code> asks a third time and then
-      looks the tab back up by string. Adding a sixth tab with any behavior of its own means
-      finding all four sites.
+    <div class="figures">
+      <div><b>62</b><span>application design modules</span></div>
+      <div><b>62</b><span>matching test-design stubs</span></div>
+      <div><b>0</b><span>application implementations</span></div>
+      <div><b>0</b><span>executable test cases</span></div>
+    </div>
+  </header>
+
+  <section>
+    <h2>Progress now</h2>
+    <p class="section-note">
+      “Complete” below means the review artifact exists and type-checks. It does
+      not mean browser behavior or test coverage exists.
     </p>
-    <div class="verdict"><b>Strategy</b>
-      One object per tab &mdash; <code>SourceTab</code>, <code>DiagramTab</code>,
-      <code>ConstructionStatusTab</code>, <code>UpdateDocsTab</code> &mdash; each knowing its
-      filename, its after-load hook, and its nav contribution. The four conditionals become
-      four method calls.
-    </div>
-  </div>
 
-  <div class="finding sharp">
-    <h3>Post-injection wiring is a hand-maintained checklist, and it is already out of sync</h3>
-    <span class="evidence">app.js:164, 478, 362, 402 &mdash; four enhancers, three call sites, three different subsets</span>
-    <p>
-      Any HTML injected into the page needs some combination of <code>executeScripts</code>,
-      <code>renderLessonDiagrams</code>, <code>wireRunTestsButtons</code> and
-      <code>wireProjectTerminalButtons</code>. Nothing enforces which. Today
-      <code>renderCanonicalConstructionLesson</code> runs all four,
-      <code>renderConstructionTextbookTask</code> runs three &mdash; it omits
-      <code>wireProjectTerminalButtons</code> &mdash; and <code>loadFile</code> runs one.
-      So an inline lesson with an "open a terminal here" button renders the button and
-      leaves it dead, while the same markup in the canonical leaf file works. That is the
-      exact shape of the stale-lesson divergence <span class="mono">CLAUDE.md</span> already
-      documents, in a different layer.
+    <div class="cards">
+      <article class="card done">
+        <h3>Application design — complete</h3>
+        <p>
+          <code>app/</code> holds strict interfaces, immutable data shapes, and
+          factory declarations. It is not loaded by <code>index.html</code>.
+        </p>
+      </article>
+      <article class="card done">
+        <h3>Test design — complete</h3>
+        <p>
+          <code>app_tests/</code> mirrors all 62 source modules. Every stub names
+          one test responsibility and its future evidence.
+        </p>
+      </article>
+      <article class="card current">
+        <h3>Team architecture review — current</h3>
+        <p>
+          Review module ownership, dependency direction, test boundaries, and
+          the deliberate enhancer-chain behavior change before implementation.
+        </p>
+      </article>
+      <article class="card waiting">
+        <h3>Implementation — not started</h3>
+        <p>
+          There is no local package, compiler, test runner, emitted ESM,
+          assertion, <code>start.sh</code> build hook, or browser cutover.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>The mirror contract</h2>
+    <p class="section-note">
+      A test file changes for the same reason as its source file. Test naming
+      makes that relationship mechanical and reviewable.
     </p>
-    <div class="verdict"><b>Chain of Responsibility over a Composite</b>
-      One <code>ContentEnhancer</code> interface, one ordered pipeline, one
-      <code>applyEnhancers( container )</code> that every injection path calls. Subsets stop
-      being expressible, so they stop drifting.
-    </div>
-  </div>
 
-  <div class="finding">
-    <h3>The lesson renderer is a 110-line procedure assembling one document</h3>
-    <span class="evidence">app.js:757&ndash;868 &mdash; <span class="mono">renderConstructionTextbookTask</span></span>
-    <p>
-      Masthead, status badge, copy-path button, edition line, trail sentence, key-idea
-      callout, cloned authored sections, child roster table, progress counts, a
-      "has the author already written a continuation?" DOM query, chapter numbering, footer,
-      script execution, diagram rendering, and button wiring &mdash; all in one function
-      body, in one linear sequence, with no seam to test or reuse a piece.
+    <div class="tree"><b>app/&lt;path&gt;/&lt;name&gt;.ts</b>
+└── <b>app_tests/&lt;path&gt;/&lt;name&gt;.test.ts</b>  <em>one focused test-design stub</em>
+
+<b>app/tsconfig.json</b>
+└── <b>app_tests/tsconfig.json</b>              <em>inherits the same strict rules</em>
+
+<b>Mirrored feature boundaries</b>
+├── catalog/                  <em>pure tree, path, and tab data</em>
+├── core/                     <em>wire contracts, decoding, HTTP, clipboard, API</em>
+├── nav/                      <em>state, presentation model, presenter, DOM view</em>
+├── routing/                  <em>hash policy and browser adapter</em>
+├── content/                  <em>source, sink, Decorator, coordinator</em>
+│   └── enhancers/            <em>one handler concern per file</em>
+├── tabs/                     <em>Strategy contract, registry, three activations</em>
+├── mermaid/                  <em>runtime, load, render, and interactions</em>
+├── construction/             <em>task read/traverse/status/trail/nav/build/import</em>
+├── update/                   <em>cache, refresh, lifecycle, view, Mediator</em>
+├── testing/                  <em>stable browser seam only</em>
+├── composition-root.ts       <em>concrete assembly and lifecycle</em>
+├── config.ts                 <em>runtime values only</em>
+└── main.ts                   <em>entry-point seam only</em></div>
+
+    <div class="callout">
+      <p>
+        <strong>SRP gate:</strong> unit tests for another module do not belong
+        in the nearest convenient file. Cross-module lifecycle evidence belongs
+        with the owning coordinator, the composition root, or a deliberate
+        browser-integration entry point.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Pattern boundaries</h2>
+    <p class="section-note">
+      Patterns are admitted only where a real variation, lifecycle, or
+      integration boundary exists.
     </p>
-    <div class="verdict"><b>Builder</b>
-      <code>new ConstructionLessonBuilder( task ).masthead().keyIdea().authoredSections()
-      .roster().counts().continuation().footer().build()</code>. Each step is independently
-      readable and independently skippable; the pipeline stays the one place that knows the order.
-    </div>
-  </div>
 
-  <div class="finding sharp">
-    <h3>The relative-URL invariant is enforced by a comment, eight times</h3>
-    <span class="evidence">app.js:379, 418, 456, 508, 1033, 1101, 1175, 1199</span>
+    <div class="scroll-x">
+      <table>
+        <thead>
+          <tr><th>Pattern</th><th>Owner</th><th>Single reason to change</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Adapter</td><td><code>fetch-http-client</code>, Mermaid loader, task model</td><td>An external browser or authored-markup boundary changes.</td></tr>
+          <tr><td>Facade</td><td><code>docs-api</code></td><td>The application-facing server capability changes.</td></tr>
+          <tr><td>Strategy</td><td>tabs and diagram interactions</td><td>A replaceable activation or interaction policy changes.</td></tr>
+          <tr><td>Observer</td><td>navigation, task navigation, update run</td><td>One owned mutable lifecycle changes.</td></tr>
+          <tr><td>Chain of Responsibility</td><td>enhancer pipeline</td><td>The mandatory post-insertion order changes.</td></tr>
+          <tr><td>Decorator</td><td>enhanced content host</td><td>The guarantee around successful insertion changes.</td></tr>
+          <tr><td>Builder</td><td>construction lesson builder</td><td>The ordered lesson assembly changes.</td></tr>
+          <tr><td>Composite</td><td>document and task trees</td><td>Nested traversal changes.</td></tr>
+          <tr><td>Mediator</td><td>update controller</td><td>Status, run state, and passive-view coordination changes.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
     <p>
-      <span class="mono">CLAUDE.md</span> is explicit that a leading slash on
-      <code>api/git-status</code> breaks the SPA under the dashboard's
-      <code>/agent-block/</code> reverse proxy &mdash; and the current defense is a prose
-      comment at the call sites that happen to have one. The same eight sites also
-      re-decide <code>cache: "no-store"</code>, JSON-vs-text parsing, and error shape
-      independently, which is why a failed <code>git-status</code> silently becomes
-      <code>{ exists: false, dirty: false }</code> in one place and a rendered error string
-      in another.
+      The composition root is not an Abstract Factory. The discriminated update
+      lifecycle is not a GoF State hierarchy. The generic action binder is not
+      Template Method. No Singleton, event bus, service locator, or speculative
+      helper layer belongs in this refactor.
     </p>
-    <div class="verdict"><b>Facade, with a Null Object</b>
-      A single <code>DocsApi</code> module owns every server route and is the only file
-      allowed to call <code>fetch</code>. Relative-path correctness becomes one line in one
-      file. The unknown-status fallback becomes a named <code>UNKNOWN_STATUS</code> constant
-      instead of two duplicated literals.
-    </div>
-  </div>
-</section>
+  </section>
 
-<section>
-  <h2>Proposed module layout</h2>
-  <p class="section-note">
-    Native ES modules, no build step &mdash; the SPA's no-toolchain constraint holds.
-    <code>app.js</code> shrinks to a composition root: it constructs the concrete objects,
-    wires the subscriptions, and starts the router.
-  </p>
+  <section>
+    <h2>Migration work order</h2>
+    <p class="section-note">
+      The skeleton supports review; it does not skip any implementation step.
+      Each numbered step remains one coherent, green commit.
+    </p>
 
-  <div class="tree"><b>app.js</b>                       <em>composition root only, ~40 lines</em>
+    <ol class="steps">
+      <li>
+        <div>
+          <h3>Toolchain and characterization safety net <span class="risk now">next</span></h3>
+          <p>
+            Add the repository-local compiler, package lock, build and test
+            runners, real characterization assertions, generated-output policy,
+            and <code>start.sh</code> hook. The mirrored stubs are the only
+            completed portion of this step.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>Pure catalog and routing policies <span class="risk wait">waiting</span></h3>
+          <p>Implement catalog literals, tree traversal, document paths, tab descriptors, and pure hash parsing.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>HTTP Adapter, decoders, and DocsApi Facade <span class="risk wait">waiting</span></h3>
+          <p>Make the fetch adapter the sole raw-I/O boundary and decode all untrusted JSON from <code>unknown</code>.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>Mermaid Strategies and enhancer chain <span class="risk wait">waiting</span></h3>
+          <p>Guarantee scripts → diagrams → run-tests → terminal after every successful insertion.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>Navigation Observer, Presenter, and passive view <span class="risk wait">waiting</span></h3>
+          <p>Give main navigation one state owner and remove state and catalog reads from the DOM view.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>Content controller and tab Strategies <span class="risk wait">waiting</span></h3>
+          <p>Remove tab-key branching from controllers and route every insertion through the decorated host.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>Construction Status subsystem <span class="risk wait">waiting</span></h3>
+          <p>Implement task reading, traversal, status, trail, navigation, lesson building, canonical import, and summary in dependency order.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>Update Documentation subsystem <span class="risk wait">waiting</span></h3>
+          <p>Implement the status cache, refresh use case, finite-state lifecycle, passive view, and Mediator.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>Composition root and browser cutover <span class="risk wait">waiting</span></h3>
+          <p>Wire, expose <code>window.__spa</code>, load generated ESM, verify the proxy, then remove legacy <code>app.js</code>.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
 
-<b>core/</b>
-  dom.js                    <em>executeScripts, clipboard fallback</em>
-  <u>docs-api.js</u>               <em>Facade: the only file that calls fetch()</em>
+  <section>
+    <h2>Current checks and hard gates</h2>
+    <ul>
+      <li>Type-check <code>app/tsconfig.json</code> and <code>app_tests/tsconfig.json</code> independently.</li>
+      <li>A test stub is never counted as an executable test or passing assertion.</li>
+      <li>Only <code>fetch-http-client.ts</code> may call raw <code>fetch()</code>.</li>
+      <li>Views receive models and callbacks; they do not fetch, traverse domain trees, or read global state.</li>
+      <li>Every HTML insertion passes through <code>EnhancedContentHost</code>.</li>
+      <li>All API and Mermaid URLs remain relative for the <code>/agent-block/</code> reverse proxy.</li>
+      <li>Before cutover, verify revalidation for every emitted ESM submodule; versioning only the entry is insufficient.</li>
+      <li>The live <code>app.js</code> and its cache stamp remain untouched until the final verified cutover.</li>
+    </ul>
+  </section>
 
-<b>catalog/</b>
-  sections.js               <em>the sections tree — pure data, most-edited file</em>
-  tabs.js                   <em>tab Strategies, overviewFile, DOC_ROOT</em>
-  <u>doc-tree.js</u>               <em>Composite: resolveNode, hasChildren, filePath, itemKey</em>
-
-<b>nav/</b>
-  <u>nav-state.js</u>              <em>Observer subject — sole owner of the 3 nav variables</em>
-  nav-view.js               <em>addLink, renderNav — a pure view over nav-state</em>
-
-<b>content/</b>
-  content-host.js           <em>owns #content; loadFile; runs the enhancer pipeline</em>
-  <u>enhancers/</u>                <em>Chain: scripts → mermaid → run-tests → terminal</em>
-
-<b>mermaid/</b>
-  theme.js  loader.js  render.js  pan-zoom.js  step-tooltips.js
-
-<b>construction/</b>
-  <u>task-model.js</u>             <em>Adapter over li[data-task-id] — 10 query helpers</em>
-  task-nav.js               <em>drill-down state + its nav provider</em>
-  <u>lesson-builder.js</u>         <em>Builder: masthead / roster / counts / continuation</em>
-  canonical-lesson.js       <em>fetch + import + URL rebasing</em>
-  summary.js                <em>renderConstructionSummary</em>
-
-<b>update/</b>
-  git-status.js             <em>status cache + refresh</em>
-  update-run.js             <em>start/poll state machine</em>
-  update-view.js            <em>renderUpdateButton</em>
-
-<b>routing/</b>
-  hash-route.js             <em>parse + apply, against nav-state's public API</em></div>
-
-  <h3>Two collapses worth calling out</h3>
-  <ul class="plain">
-    <li>
-      <code>wireRunTestsButtons</code> and <code>wireProjectTerminalButtons</code>
-      (app.js:362 and 402) are the same 35-line algorithm with different selectors and
-      labels. They become one <code>asyncActionButton( spec )</code> factory and two
-      six-line specs &mdash; a Template Method where only the varying parts are written down.
-    </li>
-    <li>
-      Ten <code>constructionTask*</code> helpers each re-derive their answer from raw DOM
-      with <code>Array.from( children ).find( … )</code>. As one <code>Task</code> Adapter
-      with <code>title()</code>, <code>description()</code>, <code>children()</code>,
-      <code>ancestors()</code>, <code>siblings()</code>, they become the first thing in this
-      codebase that is unit-testable without a browser.
-    </li>
-  </ul>
-</section>
-
-<section>
-  <h2>Migration sequence</h2>
-  <p class="section-note">
-    Ordered by risk, lowest first. Each step is a self-contained commit that leaves the SPA
-    working &mdash; per the repo's commit-before-you-stop rule, none of these should sit
-    uncommitted across a session.
-  </p>
-
-  <ol class="steps">
-    <li>
-      <div>
-        <h3>Extract the pure data<span class="risk lo">no logic moved</span></h3>
-        <p>
-          <code>sections</code>, <code>detailTabs</code>, <code>overviewFile</code>,
-          <code>DOC_ROOT</code>, <code>MERMAID_THEME</code> move out verbatim. Immediately
-          worth it on its own: <code>sections</code> is one of the three places
-          <span class="mono">CLAUDE.md</span> says every new leaf must be registered, and
-          adding one stops producing a diff against the same file as every behavior change.
-        </p>
-      </div>
-    </li>
-    <li>
-      <div>
-        <h3>Extract the pure functions<span class="risk lo">no state touched</span></h3>
-        <p>
-          <code>doc-tree.js</code>, <code>task-model.js</code>, <code>hash-route.js</code>
-          parsing. These take arguments and return values &mdash; no <code>content</code>,
-          no <code>nav</code>, no globals. This is where a first test file becomes possible.
-        </p>
-      </div>
-    </li>
-    <li>
-      <div>
-        <h3>Introduce <code>DocsApi</code><span class="risk lo">mechanical</span></h3>
-        <p>
-          Move all eight <code>fetch</code> sites behind named methods. Fixes the
-          duplicated-fallback inconsistency and puts the reverse-proxy invariant in one place
-          where a future reviewer can actually find it.
-        </p>
-      </div>
-    </li>
-    <li>
-      <div>
-        <h3>Build the enhancer pipeline<span class="risk mid">behavior change, intended</span></h3>
-        <p>
-          One ordered chain, called from every injection path. This deliberately changes
-          behavior: <code>wireProjectTerminalButtons</code> starts running on inline lessons,
-          where it is currently missing. Worth verifying in headless Chrome through the real
-          nav flow, per the skill's diagram-verification workflow.
-        </p>
-      </div>
-    </li>
-    <li>
-      <div>
-        <h3>Split the Construction Status subsystem<span class="risk mid">largest diff</span></h3>
-        <p>
-          405 lines out, into the Builder plus the task-nav module. Behavior-preserving, but
-          it is the biggest single move &mdash; and the Construction Status pages are the ones
-          with the most authored content depending on their exact rendering.
-        </p>
-      </div>
-    </li>
-    <li>
-      <div>
-        <h3>Replace the globals with <code>NavState</code><span class="risk hi">touches everything</span></h3>
-        <p>
-          Last, because every earlier step reduces the number of call sites that read the
-          globals directly. Tab Strategies land with it, since they need somewhere to
-          subscribe. Do this one alone, in its own commit.
-        </p>
-      </div>
-    </li>
-  </ol>
-</section>
-
-<section>
-  <h2>Open questions for the team</h2>
-
-  <h3>Cache-busting does not survive the split as-is</h3>
-  <p>
-    <span class="mono">index.html</span> versions exactly one file
-    (<code>app.js?v=20260902hashroute2</code>), and that query string is the SPA's only cache
-    control. Static <code>import</code> specifiers inside modules are fetched and cached
-    independently &mdash; so after the split, a bumped entry-point version would still serve
-    every stale submodule. Three options: append <code>?v=</code> to every import specifier
-    (mechanical but noisy and easy to half-do), reintroduce a concatenation step (rejected by
-    the no-build-step constraint), or send <code>Cache-Control: no-store</code> for
-    <code>.js</code> from <span class="mono">server.py</span>. <b>The server header is the
-    recommendation</b> &mdash; we own the server, it is roughly five lines, and it removes a
-    manual step that is currently easy to forget.
-  </p>
-
-  <h3>Is any of this testable, and do we want it to be?</h3>
-  <p>
-    There is no test suite here and nothing to lint; verification means driving headless
-    Chrome through the real nav flow. Steps 1&ndash;3 produce genuinely pure modules
-    &mdash; path resolution, hash parsing, task-tree queries &mdash; that a plain Node script
-    could assert against with no DOM at all. That is a decision to make deliberately: the
-    split's main payoff is only collected if we take it.
-  </p>
-
-  <h3>Does the item catalog want to stay in JavaScript?</h3>
-  <p>
-    <code>sections</code> in <span class="mono">app.js</span>,
-    the folder on disk, and <code>resolve_source_path()</code> in
-    <span class="mono">doc_source_map.py</span> are three hand-synced registries, and
-    <span class="mono">mazda/</span> is already half-registered &mdash; navigable, but with
-    git status and Update Documentation silently dead. Once <code>sections</code> is its own
-    file, publishing it as JSON that both <span class="mono">app.js</span> and the Python side
-    read is a small step, and it would let a checker script catch that class of drift.
-    Out of scope for this refactor; worth deciding whether we are heading there.
-  </p>
-</section>
-
-<footer>
-  Reviewed against <span class="mono">app.js</span> at <span class="mono">bb021bf</span>,
-  1,301 lines. Line numbers and counts in this document were taken from that revision and
-  will drift as soon as step 1 lands.
-</footer>
-
+  <footer>
+    Progress synchronized with <span class="mono">app_refactor_plan.md</span> on
+    September 3, 2026. The Markdown plan remains the authoritative detailed
+    architecture and acceptance checklist.
+  </footer>
 </div>

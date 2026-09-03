@@ -9,6 +9,24 @@ The live SPA still runs `app.js`. Nothing under `app/` is loaded by
 `index.html` yet. Do not confuse a compiling design skeleton with a completed
 runtime migration.
 
+## Progress checkpoint — September 3, 2026
+
+The review skeleton is complete and ready for team inspection:
+
+- `app/` contains 62 strict TypeScript design modules plus its no-emit
+  `tsconfig.json`;
+- `app_tests/` now mirrors every TypeScript source module as
+  `<name>.test.ts`, preserving the same directory boundaries;
+- each test stub names one test responsibility and its planned evidence;
+- `app_tests/tsconfig.json` extends the application design configuration so
+  the scaffold is checked under the same strict compiler rules.
+
+This checkpoint contains **no application implementations, executable test
+cases, test runner, generated JavaScript, or browser cutover**. A `.test.ts`
+file is a review guide, not evidence that its corresponding behavior works.
+The next implementation work remains Step 0 and should begin only after the
+team has reviewed these two mirrored trees.
+
 ## Outcome
 
 The finished application will have:
@@ -50,6 +68,7 @@ git status --short
 git diff --stat
 python3 check_construction_status_consistency.py
 /home/adamsl/letta-code/node_modules/.bin/tsc -p app/tsconfig.json
+/home/adamsl/letta-code/node_modules/.bin/tsc -p app_tests/tsconfig.json
 ```
 
 The SPA worktree must be understood before editing. The parent
@@ -97,6 +116,11 @@ enforce them.
 11. **A module gets one reason to change.** A class or interface may have
     several cohesive methods; splitting by method count alone is not SRP.
     Split when the reason, actor, integration, or lifecycle differs.
+12. **A test file has the same single reason to change as its source.**
+    `app_tests/<path>/<name>.test.ts` covers only
+    `app/<path>/<name>.ts`. Cross-module lifecycle tests belong to the nearest
+    coordinator, composition-root, or browser-integration boundary; they must
+    not turn a focused unit-test file into a subsystem test bucket.
 
 ## GoF patterns and their limits
 
@@ -213,6 +237,26 @@ app/
     spa-test-seam.ts              typed window.__spa contract
 ```
 
+## TypeScript test-design layout
+
+`app_tests/` is a structural mirror, not a second implementation tree:
+
+```text
+app/<path>/<name>.ts       -> app_tests/<path>/<name>.test.ts
+app/tsconfig.json          -> app_tests/tsconfig.json
+```
+
+All 62 source modules have exactly one corresponding test-design stub. The
+stub documents the source module's sole responsibility and the evidence that
+future tests must provide. It currently exports an empty module so it can be
+strictly type-checked without pretending that assertions exist.
+
+The mirror deliberately has no shared kitchen-sink test helper, global mock
+container, or all-purpose fixture. Add a helper later only when at least two
+implemented tests need the same cohesive behavior. Browser-wide behavior
+belongs behind `app/testing/spa-test-seam.ts` and in a future integration-test
+entry point, not in arbitrary unit files.
+
 The old `core/dom.js` design is deliberately gone. Script execution is a
 content enhancer; clipboard behavior is a core browser adapter. They have
 different actors and different failure modes.
@@ -253,6 +297,10 @@ declarations only. It enforces:
 - `verbatimModuleSyntax`;
 - browser ESM-compatible `.js` import specifiers.
 
+`app_tests/tsconfig.json` extends those rules and currently checks only the
+test-design stubs. It is not a runner configuration and does not prove that a
+single assertion has executed.
+
 TypeScript cannot run directly in the browser. Implementation step 0 must add
 a repository-local TypeScript compiler, a build configuration, and scripts:
 
@@ -280,6 +328,11 @@ shipping; query-versioning only `main.js` cannot invalidate its imports.
 Add `package.json`, lock the TypeScript version, add build/test configs, ignore
 generated output, and teach `start.sh` to build before serving. Do not change
 `index.html` yet.
+
+**Progress:** the one-for-one `app_tests/` design scaffold and its strict
+no-emit config are complete. The repository-local compiler, package lock,
+executable test harness, assertions, build config, generated-output policy,
+and `start.sh` hook are still not started.
 
 Capture the legacy behavior before moving code:
 
@@ -399,6 +452,18 @@ Only after the TypeScript browser flow passes every check:
 
 ## Verification after every step
 
+While the project remains at the review-only scaffold checkpoint, run:
+
+```bash
+/home/adamsl/letta-code/node_modules/.bin/tsc -p app/tsconfig.json
+/home/adamsl/letta-code/node_modules/.bin/tsc -p app_tests/tsconfig.json
+python3 check_construction_status_consistency.py
+git diff --check
+```
+
+After Step 0 installs the repository-local toolchain, the standing commands
+become:
+
 ```bash
 npm run typecheck
 npm test
@@ -437,6 +502,8 @@ Reject a change if any answer is yes:
 - Did a state mutation require a caller to remember a rerender ritual?
 - Did a switch on tab keys escape the Strategy boundary?
 - Did a module acquire a second actor or second reason to change?
+- Did a unit-test file begin covering behavior owned by another source module?
+- Did a test stub get counted as executable coverage or a passing assertion?
 - Was a GoF pattern added without an actual source of variation or lifecycle?
 - Was the cache stamp bumped without verifying emitted submodule caching?
 - Was a migration step left uncommitted?

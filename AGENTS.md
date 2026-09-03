@@ -8,7 +8,12 @@ This nested repository is a framework-free documentation SPA for the parent `age
 interfaces, immutable boundary shapes, and factory declarations; they are not
 loaded by `index.html` and do not implement the SPA yet. The authoritative
 migration work order is `app_refactor_plan.md`. `app_refactor_plan.html` is the
-older JavaScript-oriented reasoning page and may be stale.
+visual progress companion to that work order.
+
+`app_tests/` mirrors all 62 `app/**/*.ts` modules as focused
+`<name>.test.ts` design stubs. These files document planned evidence only;
+they contain no executable assertions and are not a test suite. Keep each test
+file limited to the same single responsibility as its source counterpart.
 
 Each leaf directory uses six fixed files: `basic_agent.html`, `basic_agent.py.html`, `mermaid_class.html`, `mermaid_sequence.html`, `basic_agent_construction_status.html`, and `basic_agent_update_documentation.html`. Keep a leaf synchronized across its folder, `app.js`'s `sections`, and `doc_source_map.py`.
 
@@ -18,11 +23,12 @@ Each leaf directory uses six fixed files: `basic_agent.html`, `basic_agent.py.ht
 - `./start.sh 9000` — serve on an alternate port.
 - `node --check app.js` — validate JavaScript syntax.
 - `/home/adamsl/letta-code/node_modules/.bin/tsc -p app/tsconfig.json` — type-check the TypeScript design stubs without emitting JavaScript.
+- `/home/adamsl/letta-code/node_modules/.bin/tsc -p app_tests/tsconfig.json` — type-check the mirrored test-design stubs; this does not run tests.
 - `python3 -m py_compile server.py doc_source_map.py update_documentation_agent.py` — validate Python syntax.
 - `.venv/bin/python update_documentation_agent.py lancedb_memory/models/turn` — regenerate one mapped leaf; this invokes the Claude Agent SDK.
 - `git diff --check` — detect whitespace errors before submitting changes.
 
-The live SPA still has no build step, package manifest, linter, or automated
+The live SPA still has no build step, package manifest, linter, or executable
 unit-test suite. `app/tsconfig.json` is deliberately `noEmit`; the TypeScript
 migration plan adds a repository-local compiler and emits browser ESM to
 `dist/app/` before changing `index.html`.
