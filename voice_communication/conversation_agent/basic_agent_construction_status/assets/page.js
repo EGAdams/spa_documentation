@@ -267,7 +267,7 @@
         button.textContent = "Opening Terminal…";
         if ( status ) {
           status.hidden = false;
-          status.textContent = "Opening Windows Terminal in the Interface File project…";
+          status.textContent = "Opening Windows Terminal in this lesson's project directory…";
         }
 
         try {

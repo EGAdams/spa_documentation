@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Event Contracts Construction Status · IConversationAgent Construction Status</title>
-  <link rel="stylesheet" href="../../../../../styles.css?v=20260830eventcontracts">
+  <link rel="stylesheet" href="../../../../../styles.css?v=20260902leafsource">
   <link rel="stylesheet" href="../../assets/page.css?v=1">
-  <script defer src="../../assets/page.js?v=1"></script>
+  <script defer src="../../assets/page.js?v=8"></script>
 </head>
 <body class="split-doc" data-mermaid-src="../../../../../vendor/mermaid.min.js">
   <main class="split-page-main">
@@ -14,11 +14,15 @@
     <a href="../../index.html">Construction Status</a> <span aria-hidden="true">›</span> <a href="../index.html">1. Declare the Plug-in Point</a> <span aria-hidden="true">›</span> <span aria-current="page">Event Contracts</span>
   </nav>
 
-  <article class="construction-lesson">
+  <article class="construction-lesson" data-canonical-source="event-contracts">
     <header class="construction-lesson-masthead">
       <p class="construction-lesson-kicker">Voice Communication University &bull; Construction Studio</p>
       <span class="construction-lesson-badge status-done">Done</span>
       <h1>Event Contracts Construction Status</h1>
+      <div class="project-terminal-control">
+        <button class="run-tests-button open-project-terminal-button" type="button" data-open-project-terminal data-api-path="../../../../../api/open-event-contracts-project-terminal">Open Terminal in Project</button>
+        <p class="project-terminal-status" role="status" aria-live="polite" hidden></p>
+      </div>
       <p class="construction-lesson-edition">IConversationAgent construction lesson</p>
       <p class="construction-lesson-trail">Stage 1 of 5 — Declare the plug-in point  ›  Step 2 of 3 — Define the shared event contracts</p>
     </header>
@@ -127,6 +131,12 @@
 <li><strong>The adapter copy is smaller on purpose.</strong> <code>submit()</code> is never handed a session id, so the adapter cannot invent one — it drops the field instead of writing a fake value.</li>
 <li><strong>Nobody consumes the events yet.</strong> <code>SpokenOutputPolicy</code> names the type in its signature and stops there.</li>
 </ul>
+<p>Those two disagreements are worth reading rather than taking on trust. Here is the service copy, excerpted from an 85-line file &mdash; the import that decides the session type, the five kinds, and the event itself.</p>
+<div class="vscode-editor" data-language="python"><div class="vscode-titlebar"><div class="vscode-app"><span class="vscode-logo">&lt;&gt;</span> Visual Studio Code</div><div aria-hidden="true" class="vscode-window-controls">—   □   ×</div></div><div class="vscode-tabs"><div class="vscode-tab"><span class="vscode-python-badge">PY</span><span>voice_communication/pydantic_models/models.py</span></div></div><pre class="vscode-code"><code><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">2</span><span class="vscode-line-text"><span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">3</span><span class="vscode-line-text"><span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">UUID</span></span></span><span class="vscode-code-line vscode-code-elision"><span aria-hidden="true" class="vscode-line-number">···</span><span class="vscode-line-text">⋮</span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">21</span><span class="vscode-line-text"><span class="k">class</span><span class="w"> </span><span class="nc">AgentEventKind</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">22</span><span class="vscode-line-text">    <span class="n">REASONING</span> <span class="o">=</span> <span class="s2">"reasoning"</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">23</span><span class="vscode-line-text">    <span class="n">ASSISTANT_TEXT</span> <span class="o">=</span> <span class="s2">"assistant_text"</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">24</span><span class="vscode-line-text">    <span class="n">TOOL</span> <span class="o">=</span> <span class="s2">"tool"</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">25</span><span class="vscode-line-text">    <span class="n">TERMINAL</span> <span class="o">=</span> <span class="s2">"terminal"</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">26</span><span class="vscode-line-text">    <span class="n">ERROR</span> <span class="o">=</span> <span class="s2">"error"</span></span></span><span class="vscode-code-line vscode-code-elision"><span aria-hidden="true" class="vscode-line-number">···</span><span class="vscode-line-text">⋮</span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">62</span><span class="vscode-line-text"><span class="k">class</span><span class="w"> </span><span class="nc">AgentEvent</span><span class="p">(</span><span class="n">VoiceModel</span><span class="p">):</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">63</span><span class="vscode-line-text">    <span class="n">session_id</span><span class="p">:</span> <span class="n">UUID</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">64</span><span class="vscode-line-text">    <span class="n">generation</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">ge</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">65</span><span class="vscode-line-text">    <span class="n">kind</span><span class="p">:</span> <span class="n">AgentEventKind</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">66</span><span class="vscode-line-text">    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span></span></span></code></pre><div class="vscode-statusbar"><div class="vscode-status-left">master   ✓ 0   ⚠ 0</div><div class="vscode-status-right">Ln 21, Col 1   Spaces: 4   UTF-8   LF   Python</div></div></div>
+<p>All five kinds are present and the field names match. The single divergence is line 63: <code>session_id: UUID</code> where <code>contracts.ts</code> line 40 says <code>sessionId: SessionId</code>, and <code>SessionId</code> is a <code>string</code>. A UUID serializes to a string, so the two agree on the wire right up until something calls <code>UUID( value )</code> on an id the browser generated.</p>
+<p>And here is the copy that actually runs today, in the Python adapter:</p>
+<div class="vscode-editor" data-language="python"><div class="vscode-titlebar"><div class="vscode-app"><span class="vscode-logo">&lt;&gt;</span> Visual Studio Code</div><div aria-hidden="true" class="vscode-window-controls">—   □   ×</div></div><div class="vscode-tabs"><div class="vscode-tab"><span class="vscode-python-badge">PY</span><span>claude_agent_adapter/models.py</span></div></div><pre class="vscode-code"><code><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">7</span><span class="vscode-line-text"><span class="sd">Reduced to the fields this adapter can populate on its own: submit() is not</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">8</span><span class="vscode-line-text"><span class="sd">given a session id, so AgentEvent here carries none either.</span></span></span><span class="vscode-code-line vscode-code-elision"><span aria-hidden="true" class="vscode-line-number">···</span><span class="vscode-line-text">⋮</span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">15</span><span class="vscode-line-text"><span class="k">class</span><span class="w"> </span><span class="nc">AgentEventKind</span><span class="p">(</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span> <span class="p">):</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">16</span><span class="vscode-line-text">    <span class="n">ASSISTANT_TEXT</span> <span class="o">=</span> <span class="s2">"assistant_text"</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">17</span><span class="vscode-line-text">    <span class="n">TERMINAL</span> <span class="o">=</span> <span class="s2">"terminal"</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">18</span><span class="vscode-line-text"> </span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">19</span><span class="vscode-line-text"> </span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">20</span><span class="vscode-line-text"><span class="k">class</span><span class="w"> </span><span class="nc">AgentEvent</span><span class="p">(</span> <span class="n">BaseModel</span> <span class="p">):</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">21</span><span class="vscode-line-text">    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span> <span class="p">)</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">22</span><span class="vscode-line-text"> </span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">23</span><span class="vscode-line-text">    <span class="n">generation</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span> <span class="n">ge</span><span class="o">=</span><span class="mi">0</span> <span class="p">)</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">24</span><span class="vscode-line-text">    <span class="n">kind</span><span class="p">:</span> <span class="n">AgentEventKind</span></span></span><span class="vscode-code-line"><span aria-hidden="true" class="vscode-line-number">25</span><span class="vscode-line-text">    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span></span></span></code></pre><div class="vscode-statusbar"><div class="vscode-status-left">master   ✓ 0   ⚠ 0</div><div class="vscode-status-right">Ln 15, Col 1   Spaces: 4   UTF-8   LF   Python</div></div></div>
+<p>Two kinds, not five, and no session field at all. Both omissions are honest: the adapter has never emitted a <code>reasoning</code>, <code>tool</code>, or <code>error</code> event, and <code>submit( text, generation )</code> is never handed a session id, so there is nothing truthful it could put in that field. Its docstring, lines 7&ndash;8, says exactly that. The debt is not that this file is wrong &mdash; it is that nothing forces it to grow when the contract does.</p>
 </section>
 <section>
 <h2>5. One turn's worth of events</h2>
@@ -159,6 +169,18 @@
     Note over Adapter,Voice: The generation on each event is what tells the policy this turn is still wanted.</pre>
 </div>
 </div>
+<ol class="diagram-step-tooltips" hidden>
+<li>The adapter emits a reasoning event for generation 7 — the agent thinking out loud on its way to an answer.</li>
+<li>The policy swallows it. Reasoning is never spoken, so the user hears nothing at all here.</li>
+<li>The adapter emits a tool event for the same generation, describing a tool call or its result.</li>
+<li>The policy swallows this one too; a screen may display it, but the voice channel stays silent.</li>
+<li>The adapter emits the first assistant_text event — a piece of the actual answer.</li>
+<li>The policy speaks that piece aloud. This is the only kind that ever reaches the user's ears.</li>
+<li>The adapter emits a second assistant_text chunk, because an answer arrives in pieces over seconds.</li>
+<li>The policy speaks that piece too, continuing the same reply without waiting for the whole answer.</li>
+<li>The adapter emits terminal for generation 7: no more response chunks are coming for this turn.</li>
+<li>The policy closes the turn and stops listening for generation 7. A later event tagged 7 is now stale.</li>
+</ol>
 </div>
 <p class="subtitle"><strong>Figure 2.</strong> Four of the five kinds are silent. That is the point of having five.</p>
 </section>
@@ -180,10 +202,22 @@
 <li><code>grep -n "class AgentEventKind" -A 6 voice_communication/pydantic_models/models.py</code> — five kinds, and a <code>session_id: UUID</code> a few lines below.</li>
 <li><code>grep -n "class AgentEventKind" -A 4 claude_agent_adapter/models.py</code> — two kinds. If this ever prints five, the reconciliation has started and this page is out of date.</li>
 </ol>
+<button class="run-tests-button" type="button" data-run-test-suite="event-contracts" data-api-path="../../../../../api/run-event-contracts-tests">Run Event Contracts Checks</button>
+<p class="run-tests-status" role="status" aria-live="polite" hidden></p>
+<br>
 </section>
 <section>
 <h2>8. How to continue from here</h2>
 <p>This is a leaf: the smallest unit in this plan, small enough that one person can finish it and prove it in one sitting. Nothing under it is hidden.</p>
+</section>
+<section>
+<h2>9. Where the next-steps queue now lives</h2>
+<p>Section 6 lists what has to happen to <em>these contracts</em>. The full ordered queue across every remaining stage &mdash; including where this item's reconciliation sits relative to everything waiting on it &mdash; lives one level up on the plan itself, where it stays in sync with the stage board: <a href="../../../../../index.html#item=voice_communication/conversation_agent&amp;tab=status&amp;anchor=next-steps">Conversation Agent Construction Status, section 6</a>.</p>
+<blockquote class="key-idea">
+<span class="callout-label">Work on this one first</span>
+<strong>Reconcile the three <code>AgentEvent</code> copies. Every remaining item streams that type across the boundary, so until the three copies agree, anything built on top of them is built on a shape that is about to change.</strong>
+</blockquote>
+<p>That first row is this page's own debt, so nearly everything downstream brings work back here. Three things specifically: the session-id decision landing either way (one of the three declarations above changes), the adapter copy growing to five kinds, and the parity test in Stage 2 being written &mdash; at which point section 7's check 4 stops being a drift alarm and becomes a real assertion.</p>
 </section>
 <blockquote class="construction-lesson-callout principle">
 <span class="construction-lesson-callout-label">Construction principle</span>

@@ -158,6 +158,18 @@ kinds of evidence, or work owned by different Agent Blocks. Do not place UI
 state mutation under an agent transport interface merely because both appear in
 the same end-to-end sequence.
 
+- **A lesson's terminal buttons come from a registry, not new routes.** An
+  "Open Terminal in Project" button in the masthead and a "how to check this
+  yourself" button at the end of the checks section both POST to
+  `../../../../../api/open-<slug>-project-terminal` and
+  `../../../../../api/run-<slug>-tests`. `server.py`'s `LESSON_PROJECTS` maps
+  `<slug>` to a fixed directory plus a fixed `scripts/run_<lesson>_tests.sh`;
+  nothing from the request reaches a shell. Adding the buttons to a lesson is
+  one row there plus the script -- do not hand-write another pair of routes.
+  `page.js` wires both button kinds generically from `data-open-project-terminal`
+  / `data-run-test-suite`. "Interface File" and "Event Contracts" are the two
+  worked examples.
+
 Use `voice_communication/conversation_agent/basic_agent_construction_status.html`
 as the working reference.
 

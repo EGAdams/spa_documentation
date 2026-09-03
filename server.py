@@ -12,10 +12,10 @@ Same static-file behavior as `python3 -m http.server`, plus local API routes:
     GET /api/run-update-status?item=<docs-item-path>
         -> { "running": bool, "exit_code": int|null, "log_tail": str }
 
-    POST /api/run-interface-file-tests
+    POST /api/run-<lesson>-tests
         -> { "ok": bool, "terminal": "Windows Terminal", "profile": "Ubuntu-26.04" }
 
-    POST /api/open-interface-file-project-terminal
+    POST /api/open-<lesson>-project-terminal
         -> { "ok": bool, "terminal": "Windows Terminal", "profile": "Ubuntu-26.04" }
 
 /api/git-status runs `git status --porcelain` on that item's real source file
@@ -36,6 +36,12 @@ output, then refreshes /api/git-status and reloads the report. Only one run
 per item at a time -- a second click while one's in flight is rejected, not
 queued or restarted.
 
+<lesson> is a slug from LESSON_PROJECTS below -- one entry per Construction
+Status lesson page that carries an "Open Terminal in Project" button and a
+"how to check this yourself" button. Both routes are argument-only: the slug
+selects a fixed directory and a fixed script, and nothing from the request
+body reaches a shell.
+
 Needs .venv (claude_agent_sdk, pygments) for the subprocess it launches, but
 this file itself is stdlib only.
 """
@@ -55,15 +61,28 @@ VENV_PYTHON = DOCS_ROOT / ".venv" / "bin" / "python"
 UPDATE_SCRIPT = DOCS_ROOT / "update_documentation_agent.py"
 RUNS_DIR = DOCS_ROOT / ".update_runs"
 AGENT_BLOCKS_ROOT = DOCS_ROOT.parent
-INTERFACE_FILE_TEST_SCRIPT = DOCS_ROOT / "scripts" / "run_interface_file_tests.sh"
-INTERFACE_FILE_PROJECT_DIR = (
+DECLARE_PLUG_IN_POINT_DIR = (
     DOCS_ROOT
     / "voice_communication"
     / "conversation_agent"
     / "basic_agent_construction_status"
     / "declare_the_plug_in_point"
-    / "interface_file"
 )
+
+# One entry per lesson page with terminal buttons. Adding a lesson is a row
+# here plus its check script -- not another pair of hand-written routes.
+LESSON_PROJECTS = {
+    "interface-file": {
+        "title": "Interface File",
+        "directory": DECLARE_PLUG_IN_POINT_DIR / "interface_file",
+        "test_script": DOCS_ROOT / "scripts" / "run_interface_file_tests.sh",
+    },
+    "event-contracts": {
+        "title": "Event Contracts",
+        "directory": DECLARE_PLUG_IN_POINT_DIR / "event_contracts",
+        "test_script": DOCS_ROOT / "scripts" / "run_event_contracts_tests.sh",
+    },
+}
 WINDOWS_TERMINAL_PROFILE = "Ubuntu-26.04"
 WSL_DISTRO = "Ubuntu-26.04"
 WINDOWS_MOUNT_ROOT = Path( "/mnt" )
@@ -239,25 +258,24 @@ def _open_windows_terminal(
     threading.Thread( target=terminal_process.wait, daemon=True ).start()
 
 
-def _open_interface_file_test_terminal() -> None:
-    if not INTERFACE_FILE_TEST_SCRIPT.is_file():
-        raise RuntimeError( "Interface File test script is missing" )
+def _open_lesson_test_terminal( lesson: dict ) -> None:
+    script = lesson[ "test_script" ]
+    if not script.is_file():
+        raise RuntimeError( f"{lesson[ 'title' ]} test script is missing" )
     # The script ends with `exec bash`, leaving the Ubuntu tab open and usable
     # after every check finishes.
     _open_windows_terminal(
         AGENT_BLOCKS_ROOT,
-        "Interface File Tests",
-        ( "bash", str( INTERFACE_FILE_TEST_SCRIPT ) ),
+        f"{lesson[ 'title' ]} Tests",
+        ( "bash", str( script ) ),
     )
 
 
-def _open_interface_file_project_terminal() -> None:
-    if not INTERFACE_FILE_PROJECT_DIR.is_dir():
-        raise RuntimeError( "Interface File documentation directory is missing" )
-    _open_windows_terminal(
-        INTERFACE_FILE_PROJECT_DIR,
-        "Interface File Project",
-    )
+def _open_lesson_project_terminal( lesson: dict ) -> None:
+    directory = lesson[ "directory" ]
+    if not directory.is_dir():
+        raise RuntimeError( f"{lesson[ 'title' ]} documentation directory is missing" )
+    _open_windows_terminal( directory, f"{lesson[ 'title' ]} Project" )
 
 
 class DocsRequestHandler( SimpleHTTPRequestHandler ):
@@ -284,11 +302,20 @@ class DocsRequestHandler( SimpleHTTPRequestHandler ):
         if parsed.path == "/api/run-update":
             self._handle_run_update()
             return
-        if parsed.path == "/api/run-interface-file-tests":
-            self._handle_run_interface_file_tests()
+        if parsed.path.startswith( "/api/run-" ) and parsed.path.endswith( "-tests" ):
+            self._handle_lesson_terminal(
+                parsed.path[ len( "/api/run-" ): -len( "-tests" ) ],
+                _open_lesson_test_terminal,
+            )
             return
-        if parsed.path == "/api/open-interface-file-project-terminal":
-            self._handle_open_interface_file_project_terminal()
+        if (
+            parsed.path.startswith( "/api/open-" )
+            and parsed.path.endswith( "-project-terminal" )
+        ):
+            self._handle_lesson_terminal(
+                parsed.path[ len( "/api/open-" ): -len( "-project-terminal" ) ],
+                _open_lesson_project_terminal,
+            )
             return
         self.send_error( 404 )
 
@@ -329,9 +356,14 @@ class DocsRequestHandler( SimpleHTTPRequestHandler ):
 
         self._send_json( { "ok": True } )
 
-    def _handle_run_interface_file_tests( self ) -> None:
+    def _handle_lesson_terminal( self, slug: str, open_terminal ) -> None:
+        lesson = LESSON_PROJECTS.get( slug )
+        if lesson is None:
+            self._send_json( { "ok": False, "error": f"unknown lesson '{slug}'" }, 404 )
+            return
+
         try:
-            _open_interface_file_test_terminal()
+            open_terminal( lesson )
         except ( OSError, RuntimeError ) as error:
             self._send_json( { "ok": False, "error": str( error ) }, 503 )
             return
@@ -340,20 +372,7 @@ class DocsRequestHandler( SimpleHTTPRequestHandler ):
             "ok": True,
             "terminal": "Windows Terminal",
             "profile": WINDOWS_TERMINAL_PROFILE,
-        } )
-
-    def _handle_open_interface_file_project_terminal( self ) -> None:
-        try:
-            _open_interface_file_project_terminal()
-        except ( OSError, RuntimeError ) as error:
-            self._send_json( { "ok": False, "error": str( error ) }, 503 )
-            return
-
-        self._send_json( {
-            "ok": True,
-            "terminal": "Windows Terminal",
-            "profile": WINDOWS_TERMINAL_PROFILE,
-            "directory": str( INTERFACE_FILE_PROJECT_DIR ),
+            "directory": str( lesson[ "directory" ] ),
         } )
 
     def _handle_run_update_status( self, parsed: urllib.parse.ParseResult ) -> None:

@@ -212,6 +212,12 @@
         <li><strong>Row 2 choosing a second method.</strong> Then cancellation lands on <code>IConversationAgent</code> itself rather than beside it.</li>
         <li><strong>Row 6 landing.</strong> The interface file's own "how to check this yourself" grep gains a fourth hit, and its "A real screen depends on it" row finally moves off Not started.</li>
       </ul>
+      <p><strong>What would bring work back to the Event Contracts</strong></p>
+      <ul>
+        <li><strong>Row 1 settling the session id.</strong> Either <code>contracts.ts</code> drops <code>sessionId</code> or <code>pydantic_models/models.py</code> stops typing it as a <code>UUID</code> &mdash; one of the three declarations on that page changes either way.</li>
+        <li><strong>Row 1 bringing the adapter copy up to five kinds.</strong> <code>claude_agent_adapter/models.py</code> emits two today; its "how to check this yourself" check 4 exists to catch exactly that change.</li>
+        <li><strong>Row 6 landing.</strong> The first consumer filters a real stream, and the page's "Something reads these events" row finally moves off Not started.</li>
+      </ul>
 
       <h2>7. How to read the rest of this plan</h2>
       <p>The sidebar shows one level at a time. A red corner triangle means the item opens into smaller items; a plain entry is a leaf, small enough to finish and prove in one sitting. Selecting any item replaces this chapter with a lesson about that item alone: what it means, what exists, what is missing, how we will know it is done, and the next concrete action.</p>
