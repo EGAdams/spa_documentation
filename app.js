@@ -1222,7 +1222,7 @@ function selectDetail( tab ) {
   resetConstructionTaskNav();
   renderNav();
   const selectedItem = itemKey();
-  loadFile( filePath( tab.file ) ).then( () => {
+  return loadFile( filePath( tab.file ) ).then( () => {
     if ( currentDetail !== tab.key || itemKey() !== selectedItem ) return;
     if ( tab.key === "status" && content.querySelector( ".construction-task-tree" ) ) {
       constructionTaskPath = [];
@@ -1234,4 +1234,68 @@ function selectDetail( tab ) {
   } );
 }
 
-goHome();
+// --- URL hash deep-linking --------------------------------------------------
+// Normal in-app navigation has no history integration (see CLAUDE.md) -- nav
+// state lives entirely in the module-level variables above. This is the one
+// exception: a hand-written link in a generated doc page (e.g. a lesson's
+// "see the plan's next-steps queue" link) needs to land a reader on a real
+// tab with the real sidebar, not on a bare fragment file that was only ever
+// meant to be fetched into #content. Read once on load; the app itself never
+// writes to location.hash, so there's nothing to keep in sync afterward.
+// Format: #item=<top>/<path>/<to>/<leaf>&tab=<detailTabs key>&anchor=<id>
+function parseHashRoute() {
+  const raw = window.location.hash.replace( /^#/, "" );
+  if ( !raw ) return null;
+  const params = new URLSearchParams( raw );
+  const item = params.get( "item" );
+  if ( !item ) return null;
+  return {
+    pathSegments: item.split( "/" ).filter( Boolean ),
+    tab: params.get( "tab" ),
+    anchor: params.get( "anchor" ),
+  };
+}
+
+function applyHashRoute( route ) {
+  const [ top, ...path ] = route.pathSegments;
+  if ( !sections[ top ] ) return false;
+
+  let node = { items: sections[ top ].items };
+  for ( const key of path ) {
+    if ( !node.items || !node.items[ key ] ) return false;
+    node = node.items[ key ];
+  }
+
+  currentTop = top;
+  itemPath = path;
+  resetConstructionTaskNav();
+
+  const scrollToAnchor = () => {
+    if ( !route.anchor ) return;
+    content.querySelector( `#${CSS.escape( route.anchor )}` )?.scrollIntoView();
+  };
+
+  const tab = detailTabs.find( ( t ) => t.key === route.tab );
+  if ( tab ) {
+    selectDetail( tab ).then( scrollToAnchor );
+  } else {
+    currentDetail = null;
+    renderNav();
+    showCurrentContent().then( scrollToAnchor );
+  }
+  return true;
+}
+
+const hashRoute = parseHashRoute();
+if ( !hashRoute || !applyHashRoute( hashRoute ) ) {
+  goHome();
+}
+
+// A route link clicked while already inside the app (e.g. the leaf lesson is
+// open via loadFile(), not a fresh navigation) only changes location.hash --
+// no page load happens, so the read-once block above never reruns. Handle
+// that same-document case explicitly.
+window.addEventListener( "hashchange", () => {
+  const route = parseHashRoute();
+  if ( route ) applyHashRoute( route );
+} );

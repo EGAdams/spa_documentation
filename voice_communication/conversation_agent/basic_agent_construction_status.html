@@ -1,3 +1,48 @@
+<!-- This file is normally injected into the SPA shell's #content via
+     app.js's loadFile() (innerHTML), which already has styles.css loaded --
+     this <link> is a no-op duplicate in that case. It exists so that a
+     direct link to this file (e.g. Interface File section 9's
+     "#next-steps" link) still renders styled rather than as bare HTML: a
+     browser parsing this file standalone hoists a leading <link> into an
+     implied <head>, per the HTML5 parsing algorithm. -->
+<link rel="stylesheet" href="../../styles.css?v=20260902leafsource">
+<!-- Breadcrumb nav for the same direct-link case as the <link> above. A
+     literal <body> tag here becomes the real document body (with its class)
+     when this file is opened standalone, but is silently dropped -- along
+     with its class -- when this markup is injected into the SPA shell's own
+     #content via innerHTML (verified empirically: innerHTML fragment
+     parsing does not create a body element for a body start tag). The CSS
+     below stays hidden unless it finds itself under a real body.split-doc,
+     so the breadcrumb only ever shows up on a standalone open, never as
+     visual clutter inside the SPA (which already has its own nav). -->
+<body class="split-doc">
+<style>
+  .construction-plan-standalone-nav { display: none; }
+  body.split-doc .construction-plan-standalone-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    margin: 0 0 18px;
+    padding: 10px 14px;
+    background: #edf1f5;
+    border-bottom: 1px solid #d3dbe4;
+    font: 700 .8rem/1.5 Arial, Helvetica, sans-serif;
+    color: #5f6b7a;
+  }
+  body.split-doc .construction-plan-standalone-nav a { color: #315b8a; text-decoration: none; }
+  body.split-doc .construction-plan-standalone-nav a:hover { color: #17365d; text-decoration: underline; }
+</style>
+<nav class="construction-plan-standalone-nav" aria-label="Breadcrumb">
+  <a href="../../index.html">Documentation Home</a>
+  <span aria-hidden="true">&rsaquo;</span>
+  <a href="basic_agent_construction_status/index.html">Stage Sections</a>
+  <span aria-hidden="true">&rsaquo;</span>
+  <span aria-current="page">Building the IConversationAgent &mdash; Construction Status (full plan)</span>
+</nav>
 <div class="construction-plan-intro construction-textbook-intro">
   <article class="construction-textbook-page">
     <header class="construction-status-masthead">
