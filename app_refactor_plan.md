@@ -168,7 +168,7 @@ app/
       pipeline.ts                 ordered Chain of Responsibility
       execute-scripts.ts          injected-script adapter
       render-lesson-diagrams.ts   Mermaid enhancer adapter
-      async-action-button.ts      shared Template Method
+      async-action-button.ts      shared action-button binder
       run-tests-buttons.ts        run-tests Strategy data
       project-terminal-buttons.ts terminal Strategy data
 
@@ -205,7 +205,7 @@ app/
   update/
     status-cache.ts               in-memory status repository
     git-status.ts                 one status-refresh use case
-    update-run.ts                 update State machine
+    update-run.ts                 update finite-state machine
     update-view.ts                passive update DOM view
     update-controller.ts          status/run/view Mediator
 

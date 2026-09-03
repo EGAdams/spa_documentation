@@ -4,15 +4,52 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## spa_documentation
 
-This nested Git repository is a plain HTML/CSS/JavaScript documentation SPA for
-the parent `agent_blocks` workspace. It has no framework, no build step, no
-package manifest, and no test suite.
+This nested Git repository currently runs as a plain HTML/CSS/JavaScript
+documentation SPA for the parent `agent_blocks` workspace. It has no framework,
+runtime build step, package manifest, or test suite.
 
 Before doing any work here, load the `building-the-spa` skill from
 `skills/building-the-spa/SKILL.md`. It defines the navigation drill-down,
 directory layout, generated-page conventions, Construction Status task trees,
 the Mermaid pan/zoom pattern, and the verification workflow this SPA depends
 on. Load it every time, not only when the task appears visual.
+
+## TypeScript refactor checkpoint
+
+`app/` contains the strict TypeScript design for replacing the 1,301-line
+`app.js`. The tree currently contains interface contracts, immutable API/DOM
+shapes, and `create*` factory declarations. It passes strict type checking, but
+it is a **design skeleton, not an implementation**:
+
+- `index.html` still loads the legacy `app.js`;
+- nothing under `app/` is executed by the browser;
+- `app/tsconfig.json` is `noEmit` and there is no local TypeScript package yet;
+- `window.__spa` is a typed planned test seam, not a live global yet;
+- all internal TypeScript imports deliberately use emitted `.js` specifiers.
+
+`app_refactor_plan.md` is the authoritative architecture and eight-step
+migration work order. Follow it one committed step at a time. The existing
+`app_refactor_plan.html` records the earlier JavaScript split reasoning and can
+be useful background, but its module layout is no longer authoritative.
+
+The TypeScript design keeps concrete browser adapters at
+`app/composition-root.ts`, raw `fetch()` isolated to the future
+`app/core/fetch-http-client.ts` implementation, JSON boundary validation in
+`app/core/api-decoders.ts`, passive views, single-owner Observer state, and one
+mandatory enhancer chain wrapped around the content host. Read the architecture
+laws and rejection checklist in the Markdown plan before implementing a stub.
+
+Type-check the current design with the installed compiler:
+
+```bash
+/home/adamsl/letta-code/node_modules/.bin/tsc -p app/tsconfig.json
+```
+
+Before browser cutover, the project still needs a repository-local TypeScript
+toolchain, generated ESM under `dist/app/`, and a build hook in `start.sh`.
+`server.py` already sends `Cache-Control: no-cache`; verify that the dashboard's
+`/agent-block/` reverse proxy preserves revalidation for imported submodules.
+Versioning only the entry module is insufficient if the proxy caches imports.
 
 ## Commit before you stop, every time
 
@@ -41,6 +78,9 @@ this one) has no way to tell it apart from finished work.
 ```bash
 ./start.sh                 # serve on http://localhost:8931/index.html
 ./start.sh 9000            # alternate port
+
+# Design-only TypeScript check; emits nothing.
+/home/adamsl/letta-code/node_modules/.bin/tsc -p app/tsconfig.json
 
 # Regenerate one leaf's source-derived docs (real Claude Agent SDK call).
 # Needs .venv; ANTHROPIC_API_KEY / ANTHROPIC_BASE_URL must stay UNSET so the
