@@ -130,14 +130,29 @@ dashboard iframe (the parent mirrors the nav in its own sidebar). Normal nav
 state lives in module-level variables (`currentTop`, `itemPath`,
 `currentDetail`) and has no history integration.
 
-## Interface File Construction Status source
+## Lessons whose leaf file is the source of truth
 
 `voice_communication/conversation_agent/basic_agent_construction_status.html`
-owns the overall Conversation Agent plan and task navigation. The Interface File
-lesson body has its own source of truth at
-`voice_communication/conversation_agent/basic_agent_construction_status/declare_the_plug_in_point/interface_file/index.html`.
-The plan references that file with `data-lesson-src`; do not copy its lesson body
-back into the plan file.
+owns the overall Conversation Agent plan and task navigation. Two of its lesson
+bodies do not live in it. Their source of truth is the leaf `index.html` under
+`basic_agent_construction_status/declare_the_plug_in_point/`:
+
+- `interface_file/index.html` (task `stage-1a`)
+- `event_contracts/index.html` (task `stage-1b`)
+
+The plan references each with `data-lesson-src` and carries no body of its own
+for them; do not copy a lesson body back into the plan file. `app.js`'s
+`renderCanonicalConstructionLesson()` fetches the leaf, clones its
+`article.construction-lesson`, and rebases every `href`, `src` and
+`data-api-path` against the leaf's URL, so one file serves both the standalone
+page and the in-SPA view.
+
+This is a live failure mode, not a hypothetical: the plan carried a stale
+16.5 KB inline duplicate of the Event Contracts lesson, so improvements to the
+leaf page were invisible to anyone using the SPA nav — the two rendered
+differently and nothing said so. `check_construction_status_consistency.py`'s
+`REQUIRED_LESSON_SRC` now pins both task ids; add a task there in the same
+change that promotes its lesson.
 
 ## Style
 

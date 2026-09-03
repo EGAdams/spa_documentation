@@ -108,6 +108,13 @@ adding per-object JavaScript. The page itself is the source of truth:
   there, because a lesson may carry a script for something else, and cloned
   `<script>` nodes never run on their own). Keeping this in `app.js` is what
   lets a lesson page stay short; do not paste a per-page copy back in.
+  A sequence figure may add a `<ol class="diagram-step-tooltips" hidden>` as
+  a direct child of `.mermaid-figure` (after `.mermaid-viewport`); `page.js`
+  and `app.js` both zip it positionally against the rendered
+  `svg .sequenceNumber` elements, so it needs **exactly one `<li>` per
+  autonumbered message**, in order. A short list silently leaves the trailing
+  steps untipped rather than erroring, so count the messages in the `pre`
+  before writing it. Notes are not numbered and get no entry.
   `MERMAID_THEME` there carries the two settings that are easy to get wrong:
   `textColor` dark, for sequence message text drawn on the page background, and
   `classText` white, for class-diagram labels drawn inside the navy boxes. The
@@ -115,11 +122,27 @@ adding per-object JavaScript. The page itself is the source of truth:
   decoded, because `textContent` drops `<br/>` in labels. Label
   `foreignObject`s still need `overflow: visible` in `styles.css` or descenders
   clip wherever Mermaid's own font stack is not installed.
-- **A completed item shows its real source in a full VS Code panel.** Generate
-  it with Pygments (`TypeScriptLexer` for `.ts`) wrapped in the
-  `.vscode-editor` chrome -- filename tab, line numbers, status bar -- because
-  the frame is what makes a reader trust it is the file on disk and not a
-  paraphrase. `pre.lesson-snippet` exists for short illustrative fragments that
+- **A completed item shows its real source in a full VS Code panel**, with
+  filename tab, gutter line numbers and status bar, because the frame is what
+  makes a reader trust it is the file on disk and not a paraphrase. Generate
+  it -- the markup is a two-column grid per line and is not worth hand-writing:
+
+  ```bash
+  .venv/bin/python scripts/generate_vscode_panel.py \
+      claude_agent_adapter/models.py \
+      --tab claude_agent_adapter/models.py \
+      --lines 7-8 --lines 15-25 --caret 15
+  ```
+
+  It prints one line to paste into the lesson. The source path is relative to
+  the `agent_blocks` workspace root, not this repo. Repeat `--lines` for an
+  excerpt; each extra range emits the `.vscode-code-elision` gap row. Omit
+  `--lines` for a whole file. It picks the lexer, the tab badge and the
+  status-bar language from the file extension, so `.ts` and `.py` both work --
+  a new language needs its badge rule in `styles.css` first, since there is no
+  generic fallback badge. It reproduces the Interface File, Event Contracts and
+  Publish Barrel panels byte-for-byte; that is the regression test if you
+  change it. `pre.lesson-snippet` exists for short illustrative fragments that
   are not a real file; it shares the same Dark+ token palette, which is scoped
   `.construction-lesson :is( .vscode-editor, pre.lesson-snippet )`. Panels run
   3-5 KB each, so include the ones that carry the item and cut the rest. When
@@ -158,17 +181,57 @@ kinds of evidence, or work owned by different Agent Blocks. Do not place UI
 state mutation under an agent transport interface merely because both appear in
 the same end-to-end sequence.
 
-- **A lesson's terminal buttons come from a registry, not new routes.** An
-  "Open Terminal in Project" button in the masthead and a "how to check this
-  yourself" button at the end of the checks section both POST to
-  `../../../../../api/open-<slug>-project-terminal` and
-  `../../../../../api/run-<slug>-tests`. `server.py`'s `LESSON_PROJECTS` maps
-  `<slug>` to a fixed directory plus a fixed `scripts/run_<lesson>_tests.sh`;
-  nothing from the request reaches a shell. Adding the buttons to a lesson is
-  one row there plus the script -- do not hand-write another pair of routes.
-  `page.js` wires both button kinds generically from `data-open-project-terminal`
-  / `data-run-test-suite`. "Interface File" and "Event Contracts" are the two
-  worked examples.
+### A standalone leaf lesson page's feature set
+
+**A leaf lesson has two renderings, and editing the file only fixes one of
+them.** The standalone page is what you get by opening its URL; the SPA shows
+whatever the plan's task carries. If the plan embeds its own copy of the lesson
+body, the nav renders that copy and your edits to the leaf file are invisible
+to every reader who arrives through the sidebar -- with nothing anywhere
+reporting a mismatch. So before editing any leaf lesson, grep the plan for the
+task's `data-lesson-src`; if the task has an inline
+`<div class="construction-task-lesson">` body instead, promote it first
+(replace the body with the reference, add the task id to the checker's
+`REQUIRED_LESSON_SRC`), then edit the leaf. Event Contracts was found in
+exactly this state -- a 16.5 KB stale inline duplicate, the second time this
+trap has been hit on this plan.
+
+Some lessons are authored as their own `index.html` under the plan's folder
+tree rather than inline in the plan (see `data-lesson-src` above). Those are
+full HTML documents with their own `<head>`, loading `../../assets/page.css`
+and `../../assets/page.js`, and they carry five interactive features beyond
+the prose. **Treat the set as a unit** -- a page with the article but none of
+the buttons reads as unfinished next to its siblings, and the gap is invisible
+until someone opens both. `declare_the_plug_in_point/interface_file/` is the
+reference implementation; `event_contracts/` was brought up to match it and is
+the worked example of *adding* them to an existing page.
+
+1. **"Open Terminal in Project"** in the masthead, inside a
+   `.project-terminal-control` div with a `.project-terminal-status` sibling.
+2. **VS Code panels** for the item's real source -- see the generator above.
+3. **Pan/zoom Mermaid figures**, with step tooltips on any sequence diagram.
+4. **A "run the checks" button** at the end of the "how to check this
+   yourself" section, running the same checks that section lists in prose.
+5. **A pointer to the plan's next-steps queue**, never a second copy of it
+   (load `construction-status-queue-management` before writing it).
+
+Features 1 and 4 are the same mechanism. Both buttons POST to
+`../../../../../api/open-<slug>-project-terminal` and
+`../../../../../api/run-<slug>-tests`; `server.py`'s `LESSON_PROJECTS` maps
+`<slug>` to a fixed directory plus a fixed `scripts/run_<lesson>_tests.sh`,
+and `page.js` wires both kinds generically from `data-open-project-terminal` /
+`data-run-test-suite`. **Adding them to a lesson is one registry row plus the
+script -- do not hand-write another pair of routes.** Nothing from the request
+reaches a shell: the slug selects the directory and the script, which is what
+keeps a browser-triggered terminal launch safe. Model a new check script on
+`scripts/run_interface_file_tests.sh`: `set +e` so one press reports every
+check rather than stopping at the first failure, a numbered label per check,
+a pass/fail tally, and `exec bash` at the end so the tab stays usable.
+
+Keep the two cache-busting query strings (`page.css?v=`, `page.js?v=`) in step
+across every lesson page when either asset changes -- they are per-page, so
+bumping one page's and forgetting its siblings leaves half the lessons on a
+stale script.
 
 Use `voice_communication/conversation_agent/basic_agent_construction_status.html`
 as the working reference.
@@ -356,3 +419,62 @@ well for this: serve the SPA (`./start.sh`), then either
 lines to catch JS errors. Don't `--virtual-time-budget` a *standalone*
 diagram fragment and conclude it's broken from a `SyntaxError` there — see
 the charset note above; test through `index.html`'s real nav flow instead.
+
+### Verifying a standalone leaf lesson page
+A leaf lesson `index.html` is the opposite case, and the warning above does
+not apply to it: it is a complete document with its own `<meta charset>` and
+its own `page.js`, so you can point headless Chrome straight at its URL and
+`--dump-dom`. No harness page, no `index.html` nav flow. Serve the SPA on a
+scratch port so you don't fight a running `./start.sh`:
+
+```bash
+python3 server.py 8944 &
+google-chrome --headless --disable-gpu --no-sandbox --virtual-time-budget=9000 \
+  --dump-dom "http://localhost:8944/<lesson path>/index.html" > dom.html
+```
+
+Then count what the JS was supposed to produce, rather than eyeballing:
+`<svg` (one per figure), `aria-label="Step ` (one per sequence step, which is
+how you catch a short tooltip list), `data-project-terminal-wired="true"`,
+`data-run-tests-wired="true"`, `data-language="` (one per VS Code panel), and
+`could not be rendered` (must be 0 -- `page.js` swallows a Mermaid failure
+into the canvas as text instead of throwing, so a broken diagram is a silent
+pass on every other check). Run the same counts against the reference lesson
+in the same pass; that catches a shared-asset edit breaking a sibling page.
+
+`--screenshot` with a tall `--window-size` renders the whole page, but the
+`.venv` has no Pillow by default -- install it there if you need to crop, and
+find the interesting bands by scanning rows for the panels' near-black
+background rather than guessing offsets.
+
+**Do not `curl` the terminal routes to test them.** They are not dry-runnable:
+a successful POST really does open a Windows Terminal tab on the user's
+desktop, and probing four of them leaves four tabs behind. Check the wiring
+from the DOM (`data-*-wired="true"`) and the registry from `LESSON_PROJECTS`;
+POST only when you actually intend a window to appear, and say so afterwards.
+
+### Verifying a lesson renders *through the SPA*, not just standalone
+Checking the leaf URL proves the file is good; it does not prove the sidebar
+shows it. Verify both. The hash route (`#item=...&tab=...&anchor=...`) has no
+`task=` parameter, so a construction task cannot be deep-linked and
+`--dump-dom` alone cannot reach one. Drive the real sidebar from a temporary
+same-origin harness in the docs root instead -- an iframe plus clicks, since
+one nav level renders at a time and a nested lesson needs a click per level:
+
+```html
+<iframe id="f" src="index.html#item=<top>/<item>&tab=status"></iframe>
+<div id="out">PENDING</div>
+<script>
+  // after the iframe loads and settles: click each nav level by visible label,
+  // then copy the iframe's .construction-task-focus innerHTML into #out so
+  // --dump-dom captures the rendered lesson.
+</script>
+```
+
+Count the same markers as the standalone check against `#out`, and add
+`Could not load the canonical lesson` (must be 0 -- `renderCanonicalConstructionLesson()`
+turns a fetch failure into that placeholder rather than throwing) and the
+rebased `data-api-path`, which must come back absolute against the server root.
+When a click finds no link, print the nav's visible labels in the failure
+message; that is what tells you which level you are on. **Delete the harness
+file when you are done** -- it lives in the served docs root.

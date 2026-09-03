@@ -66,6 +66,7 @@ QUEUE_ROW_RE = re.compile(
 REQUIRED_LESSON_SRC = {
     "voice_communication/conversation_agent/basic_agent_construction_status.html": {
         "stage-1a": "voice_communication/conversation_agent/basic_agent_construction_status/declare_the_plug_in_point/interface_file/index.html",
+        "stage-1b": "voice_communication/conversation_agent/basic_agent_construction_status/declare_the_plug_in_point/event_contracts/index.html",
     },
 }
 

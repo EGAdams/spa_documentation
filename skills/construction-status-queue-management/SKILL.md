@@ -133,5 +133,12 @@ File lesson
 (`basic_agent_construction_status/declare_the_plug_in_point/interface_file/index.html`,
 section 9) was cut down from a duplicated copy of that same table to a
 two-paragraph pointer plus its own two triggers (session id removed from
-`AgentEvent`; cancellation added to `IConversationAgent`). Use this pair as
-the template shape for the next lesson that needs the same treatment.
+`AgentEvent`; cancellation added to `IConversationAgent`). The Event Contracts
+lesson's section 9 is the second instance, written as a pointer from the
+start. Use them as the template shape for the next lesson that needs it.
+
+Both directions of the pointer have to be written in the same change: the
+lesson's section 9 points up at the plan's queue, and the plan grows a
+matching "What would bring work back to \<lesson\>" list under the queue
+table. A lesson pointing at a queue that names no trigger for it sends the
+reader on a round trip for nothing.
