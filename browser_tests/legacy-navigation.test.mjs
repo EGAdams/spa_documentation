@@ -257,7 +257,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
         }
     } );
 
-    test( "drills into both canonical lessons and backs out one level at a time", async () => {
+    test( "drills into both embedded lessons and backs out one level at a time", async () => {
         const page = await createPage();
         try {
             await openConversationStatus( page );
