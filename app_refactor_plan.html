@@ -321,27 +321,28 @@
 <div class="wrap">
   <header class="masthead">
     <p class="eyebrow">spa_documentation · TypeScript refactor</p>
-    <h1>Application and test design skeleton</h1>
+    <h1>Application refactor safety net</h1>
     <p class="standfirst">
       The production SPA still runs the 1,301-line <code>app.js</code>. The
-      strict TypeScript application design and its one-for-one test-design
-      mirror now exist for team review; no runtime migration has started.
+      strict TypeScript application design, its one-for-one test-design mirror,
+      and the first browser characterization tests now exist. No application
+      implementation or browser cutover has started.
     </p>
-    <span class="status">Review skeleton complete · September 3, 2026</span>
+    <span class="status">Step 0 safety net in progress · September 3, 2026</span>
 
     <div class="figures">
       <div><b>62</b><span>application design modules</span></div>
       <div><b>62</b><span>matching test-design stubs</span></div>
       <div><b>0</b><span>application implementations</span></div>
-      <div><b>0</b><span>executable test cases</span></div>
+      <div><b>6</b><span>executable browser tests</span></div>
     </div>
   </header>
 
   <section>
     <h2>Progress now</h2>
     <p class="section-note">
-      “Complete” below means the review artifact exists and type-checks. It does
-      not mean browser behavior or test coverage exists.
+      The design mirror remains review-only. Executable coverage currently
+      protects the first legacy-browser characterization slice.
     </p>
 
     <div class="cards">
@@ -359,18 +360,19 @@
           one test responsibility and its future evidence.
         </p>
       </article>
-      <article class="card current">
-        <h3>Team architecture review — current</h3>
+      <article class="card done">
+        <h3>Team architecture review — complete</h3>
         <p>
-          Review module ownership, dependency direction, test boundaries, and
-          the deliberate enhancer-chain behavior change before implementation.
+          Module ownership, dependency direction, test boundaries, and the
+          deliberate enhancer-chain behavior change have been reviewed.
         </p>
       </article>
-      <article class="card waiting">
-        <h3>Implementation — not started</h3>
+      <article class="card current">
+        <h3>Step 0 safety net — current</h3>
         <p>
-          There is no local package, compiler, test runner, emitted ESM,
-          assertion, <code>start.sh</code> build hook, or browser cutover.
+          The local compiler, build hook, and browser runner are present. Six
+          browser assertions pass; TypeScript implementations and unit
+          assertions have not started.
         </p>
       </article>
     </div>
@@ -459,12 +461,12 @@
     <ol class="steps">
       <li>
         <div>
-          <h3>Toolchain and characterization safety net <span class="risk now">next</span></h3>
+          <h3>Toolchain and characterization safety net <span class="risk now">current</span></h3>
           <p>
-            Add the repository-local compiler, package lock, build and test
-            runners, real characterization assertions, generated-output policy,
-            and <code>start.sh</code> hook. The mirrored stubs are the only
-            completed portion of this step.
+            The repository-local compiler, package lock, build and browser-test
+            runners, generated-output policy, <code>start.sh</code> hook, and
+            first six characterization tests are complete. Update lifecycle
+            cases and compiled TypeScript unit assertions remain.
           </p>
         </div>
       </li>

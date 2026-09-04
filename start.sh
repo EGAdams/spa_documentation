@@ -4,4 +4,5 @@
 # needs a live /api/git-status route (see server.py's docstring).
 cd "$(dirname "$0")"
 PORT="${1:-8931}"
+npm run build
 python3 server.py "$PORT"

@@ -20,12 +20,17 @@ The review skeleton is complete and ready for team inspection:
 - each test stub names one test responsibility and its planned evidence;
 - `app_tests/tsconfig.json` extends the application design configuration so
   the scaffold is checked under the same strict compiler rules.
+- Step 0 now has a repository-local pinned compiler, package lock, emit config,
+  generated-output policy, and `start.sh` build hook;
+- six executable headless-Chrome characterization tests cover home navigation,
+  all detail tabs, deep links, invalid-route fallback, embedded mode, task
+  drill-down and Back behavior, and both canonical lessons.
 
-This checkpoint contains **no application implementations, executable test
-cases, test runner, generated JavaScript, or browser cutover**. A `.test.ts`
-file is a review guide, not evidence that its corresponding behavior works.
-The next implementation work remains Step 0 and should begin only after the
-team has reviewed these two mirrored trees.
+This checkpoint still contains **no application implementations, executable
+TypeScript unit assertions, or browser cutover**. A mirrored `.test.ts` stub is
+a review guide, not evidence that its corresponding behavior works. Step 0 is
+in progress; its remaining characterization work includes the Update
+Documentation lifecycle and the first compiled TypeScript unit-test slice.
 
 ## Outcome
 
@@ -329,10 +334,11 @@ Add `package.json`, lock the TypeScript version, add build/test configs, ignore
 generated output, and teach `start.sh` to build before serving. Do not change
 `index.html` yet.
 
-**Progress:** the one-for-one `app_tests/` design scaffold and its strict
-no-emit config are complete. The repository-local compiler, package lock,
-executable test harness, assertions, build config, generated-output policy,
-and `start.sh` hook are still not started.
+**Progress:** the one-for-one `app_tests/` design scaffold, repository-local
+compiler and package lock, build config, generated-output policy, `start.sh`
+hook, and executable headless-Chrome harness are complete. Six browser tests
+now characterize the initial navigation slice. Update lifecycle
+characterization and compiled TypeScript unit assertions remain.
 
 Capture the legacy behavior before moving code:
 

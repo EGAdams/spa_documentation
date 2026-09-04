@@ -1,0 +1,14 @@
+{
+    "name": "agent-blocks-spa-documentation",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "tsc -p app/tsconfig.build.json",
+        "typecheck": "tsc -p app/tsconfig.json && tsc -p app_tests/tsconfig.json",
+        "test": "node --test --test-concurrency=1 browser_tests/*.test.mjs"
+    },
+    "devDependencies": {
+        "playwright-core": "1.62.1",
+        "typescript": "5.8.3"
+    }
+}
