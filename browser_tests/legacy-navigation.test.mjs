@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createServer } from "node:net";
 import { fileURLToPath } from "node:url";
 import { after, before, describe, test } from "node:test";
@@ -7,8 +7,11 @@ import { after, before, describe, test } from "node:test";
 import { chromium } from "playwright-core";
 
 const PROJECT_ROOT = fileURLToPath( new URL( "../", import.meta.url ) );
+const LINUX_PROJECT_ROOT = "/home/adamsl/agent_blocks/spa_documentation";
+const IS_WINDOWS = process.platform === "win32";
 const SHOW_BROWSER = process.env.SPA_TEST_HEADED === "1";
 const SLOW_MO = Number.parseInt( process.env.SPA_TEST_SLOW_MO ?? "0", 10 );
+const HOLD_OPEN_MS = Number.parseInt( process.env.SPA_TEST_HOLD_OPEN_MS ?? "0", 10 );
 const HOME_NAV_LABELS = [
     "Home",
     "Claude Agent Adapter",
@@ -70,6 +73,27 @@ async function navLabels( page ) {
     return page.locator( "#nav a" ).allTextContents();
 }
 
+async function createPage() {
+    const page = await browser.newPage();
+    if ( SHOW_BROWSER ) await page.bringToFront();
+    return page;
+}
+
+function focusWindowsChrome() {
+    if ( !SHOW_BROWSER || !IS_WINDOWS ) return;
+    const script = [
+        "$chrome = Get-Process chrome |",
+        "Where-Object { $_.MainWindowTitle -like 'Agent Blocks Docs*' } |",
+        "Select-Object -First 1;",
+        "if ($chrome) {",
+        "(New-Object -ComObject WScript.Shell).AppActivate($chrome.Id) | Out-Null",
+        "}",
+    ].join( " " );
+    spawnSync( "powershell.exe", [ "-NoProfile", "-Command", script ], {
+        stdio: "ignore",
+    } );
+}
+
 async function waitForNav( page, expected ) {
     await page.waitForFunction( ( labels ) => {
         const actual = Array.from(
@@ -92,13 +116,25 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
     before( async () => {
         const port = await reservePort();
         baseUrl = `http://127.0.0.1:${port}`;
-        serverProcess = spawn( "python3", [ "server.py", String( port ) ], {
-            cwd: PROJECT_ROOT,
-            stdio: "ignore",
-        } );
+        serverProcess = IS_WINDOWS
+            ? spawn( "wsl.exe", [
+                "-d",
+                "Ubuntu-26.04",
+                "--cd",
+                LINUX_PROJECT_ROOT,
+                "python3",
+                "server.py",
+                String( port ),
+            ], { stdio: "ignore" } )
+            : spawn( "python3", [ "server.py", String( port ) ], {
+                cwd: PROJECT_ROOT,
+                stdio: "ignore",
+            } );
         await waitForServer( `${baseUrl}/index.html` );
         browser = await chromium.launch( {
-            executablePath: "/usr/bin/google-chrome",
+            executablePath: IS_WINDOWS
+                ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+                : "/usr/bin/google-chrome",
             headless: !SHOW_BROWSER,
             slowMo: SLOW_MO,
             args: [
@@ -111,12 +147,35 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
     } );
 
     after( async () => {
+        if ( SHOW_BROWSER && HOLD_OPEN_MS > 0 && browser ) {
+            const page = await createPage();
+            await page.goto( `${baseUrl}/index.html` );
+            await page.evaluate( ( holdOpenMs ) => {
+                const banner = document.createElement( "div" );
+                banner.textContent = `Browser test run finished. Closing in ${holdOpenMs / 1000} seconds…`;
+                Object.assign( banner.style, {
+                    background: "#17365d",
+                    color: "white",
+                    font: "600 20px system-ui",
+                    left: "0",
+                    padding: "18px 24px",
+                    position: "fixed",
+                    right: "0",
+                    textAlign: "center",
+                    top: "0",
+                    zIndex: "99999",
+                } );
+                document.body.appendChild( banner );
+            }, HOLD_OPEN_MS );
+            focusWindowsChrome();
+            await new Promise( ( resolve ) => setTimeout( resolve, HOLD_OPEN_MS ) );
+        }
         await browser?.close();
         serverProcess?.kill( "SIGTERM" );
     } );
 
     test( "renders the established home navigation in order", async () => {
-        const page = await browser.newPage();
+        const page = await createPage();
         try {
             await page.goto( `${baseUrl}/index.html` );
             await waitForNav( page, HOME_NAV_LABELS );
@@ -127,7 +186,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
     } );
 
     test( "drills down to a leaf and preserves all five detail tabs", async () => {
-        const page = await browser.newPage();
+        const page = await createPage();
         try {
             await page.goto( `${baseUrl}/index.html` );
             await page.getByRole( "link", { name: "Catherine Agent", exact: true } ).click();
@@ -160,6 +219,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
             };
         } );
         const page = await context.newPage();
+        if ( SHOW_BROWSER ) await page.bringToFront();
         try {
             await page.goto(
                 `${baseUrl}/index.html#item=voice_communication/conversation_agent&tab=status&anchor=next-steps`,
@@ -173,7 +233,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
     } );
 
     test( "falls back to Home for an unknown deep link", async () => {
-        const page = await browser.newPage();
+        const page = await createPage();
         try {
             await page.goto( `${baseUrl}/index.html#item=missing/not_real&tab=source` );
             await waitForNav( page, HOME_NAV_LABELS );
@@ -184,7 +244,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
     } );
 
     test( "hides the in-page header in embedded mode", async () => {
-        const page = await browser.newPage();
+        const page = await createPage();
         try {
             await page.goto( `${baseUrl}/index.html?embedded=1` );
             assert.equal( await page.locator( "body" ).getAttribute( "class" ), "embedded" );
@@ -198,7 +258,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
     } );
 
     test( "drills into both canonical lessons and backs out one level at a time", async () => {
-        const page = await browser.newPage();
+        const page = await createPage();
         try {
             await openConversationStatus( page );
             await page.getByRole( "link", { name: "1. Declare the Plug-in Point", exact: true } ).click();

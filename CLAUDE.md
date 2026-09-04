@@ -106,6 +106,10 @@ npm run test:headed
 python3 -c "import markdown; ..."   # -> home_claude_md.html
 ```
 
+The headed test command uses Windows Node and native Windows Chrome so the
+browser appears on the user's desktop instead of inside WSLg. It keeps a final
+result page visible for ten seconds before closing automatically.
+
 `start.sh` runs `server.py` (stdlib-only) rather than a bare static server,
 because the Update Documentation tab depends on `server.py`'s
 `/api/git-status`, `/api/run-update`, and `/api/run-update-status` routes.
