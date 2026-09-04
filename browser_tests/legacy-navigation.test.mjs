@@ -11,7 +11,7 @@ const LINUX_PROJECT_ROOT = "/home/adamsl/agent_blocks/spa_documentation";
 const IS_WINDOWS = process.platform === "win32";
 const SHOW_BROWSER = process.env.SPA_TEST_HEADED === "1";
 const SLOW_MO = Number.parseInt( process.env.SPA_TEST_SLOW_MO ?? "0", 10 );
-const HOLD_OPEN_MS = Number.parseInt( process.env.SPA_TEST_HOLD_OPEN_MS ?? "0", 10 );
+const HOLD_OPEN_MS = Number.parseInt( process.env.SPA_TEST_HOLD_OPEN_MS ?? "0", 3 );
 const HOME_NAV_LABELS = [
     "Home",
     "Claude Agent Adapter",
@@ -91,6 +91,163 @@ function focusWindowsChrome() {
     ].join( " " );
     spawnSync( "powershell.exe", [ "-NoProfile", "-Command", script ], {
         stdio: "ignore",
+    });
+}
+
+async function waitForOk( page ) {
+    if ( !SHOW_BROWSER ) return;
+    await page.evaluate(() => {
+        window.__spaTestOkClicked = false;
+
+        const raised = "2px solid";
+        const dialog = document.createElement( "div" );
+        dialog.id = "spa-test-ok-dialog";
+        Object.assign( dialog.style, {
+            background: "#c0c0c0",
+            borderColor: "#dfdfdf #000000 #000000 #dfdfdf",
+            borderStyle: "solid",
+            borderWidth: "2px",
+            boxShadow: "inset 1px 1px 0 #ffffff, inset -1px -1px 0 #808080",
+            font: "11px Tahoma, 'MS Sans Serif', sans-serif",
+            left: "calc( 50% - 150px )",
+            padding: "2px",
+            position: "fixed",
+            top: "120px",
+            userSelect: "none",
+            width: "300px",
+            zIndex: "99999",
+        });
+
+        const titleBar = document.createElement( "div" );
+        Object.assign( titleBar.style, {
+            alignItems: "center",
+            background: "linear-gradient( 90deg, #000080, #1084d0 )",
+            color: "#ffffff",
+            cursor: "move",
+            display: "flex",
+            font: "bold 11px Tahoma, 'MS Sans Serif', sans-serif",
+            justifyContent: "space-between",
+            padding: "3px 3px 3px 4px",
+        });
+        const titleText = document.createElement( "span" );
+        titleText.textContent = "Agent Blocks Docs";
+        titleBar.append( titleText );
+
+        const body = document.createElement( "div" );
+        Object.assign( body.style, {
+            alignItems: "center",
+            display: "flex",
+            gap: "14px",
+            padding: "18px 14px 10px",
+        });
+        const icon = document.createElement( "div" );
+        icon.textContent = "i";
+        Object.assign( icon.style, {
+            alignItems: "center",
+            background: "#000080",
+            borderRadius: "50%",
+            color: "#ffffff",
+            display: "flex",
+            flex: "0 0 auto",
+            font: "italic bold 20px Times New Roman, serif",
+            height: "32px",
+            justifyContent: "center",
+            width: "32px",
+        });
+        const message = document.createElement( "div" );
+        message.textContent = "Test step finished. Click OK to continue.";
+        body.append( icon, message );
+
+        const bevel = ( button, pressed ) => {
+            button.style.borderColor = pressed
+                ? "#808080 #ffffff #ffffff #808080"
+                : "#ffffff #000000 #000000 #ffffff";
+            button.style.boxShadow = pressed
+                ? "inset 1px 1px 0 #000000"
+                : "inset 1px 1px 0 #dfdfdf, inset -1px -1px 0 #808080";
+        };
+
+        const footer = document.createElement( "div" );
+        Object.assign( footer.style, {
+            display: "flex",
+            justifyContent: "center",
+            padding: "6px 0 14px",
+        });
+        const okButton = document.createElement( "button" );
+        okButton.id = "spa-test-ok";
+        okButton.textContent = "OK";
+        Object.assign( okButton.style, {
+            background: "#c0c0c0",
+            borderStyle: "solid",
+            borderWidth: "2px",
+            color: "#000000",
+            cursor: "default",
+            font: "11px Tahoma, 'MS Sans Serif', sans-serif",
+            height: "23px",
+            outline: "1px dotted #000000",
+            outlineOffset: "-4px",
+            width: "75px",
+        });
+        bevel( okButton, false );
+        okButton.addEventListener( "mousedown", () => bevel( okButton, true ) );
+        okButton.addEventListener( "mouseup", () => bevel( okButton, false ) );
+        okButton.addEventListener( "click", () => {
+            window.__spaTestOkClicked = true;
+        });
+        footer.append( okButton );
+
+        const closeButton = document.createElement( "button" );
+        closeButton.textContent = "✕";
+        Object.assign( closeButton.style, {
+            background: "#c0c0c0",
+            borderColor: "#ffffff #000000 #000000 #ffffff",
+            borderStyle: "solid",
+            borderWidth: "2px",
+            color: "#000000",
+            cursor: "default",
+            font: "bold 9px Tahoma, 'MS Sans Serif', sans-serif",
+            height: "16px",
+            lineHeight: "1",
+            padding: "0",
+            width: "18px",
+        });
+        closeButton.addEventListener( "click", () => okButton.click() );
+        titleBar.append( closeButton );
+
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        const onMove = ( event ) => {
+            const maxLeft = window.innerWidth - dialog.offsetWidth;
+            const maxTop = window.innerHeight - dialog.offsetHeight;
+            const left = Math.min( Math.max( event.clientX - dragOffsetX, 0 ), maxLeft );
+            const top = Math.min( Math.max( event.clientY - dragOffsetY, 0 ), maxTop );
+            dialog.style.left = `${left}px`;
+            dialog.style.top = `${top}px`;
+        };
+        const onUp = () => {
+            document.removeEventListener( "mousemove", onMove );
+            document.removeEventListener( "mouseup", onUp );
+        };
+        titleBar.addEventListener( "mousedown", ( event ) => {
+            if ( event.target === closeButton ) return;
+            const bounds = dialog.getBoundingClientRect();
+            dragOffsetX = event.clientX - bounds.left;
+            dragOffsetY = event.clientY - bounds.top;
+            dialog.style.left = `${bounds.left}px`;
+            dialog.style.top = `${bounds.top}px`;
+            document.addEventListener( "mousemove", onMove );
+            document.addEventListener( "mouseup", onUp );
+            event.preventDefault();
+        });
+
+        dialog.append( titleBar, body, footer );
+        document.body.appendChild( dialog );
+        okButton.focus();
+    });
+    focusWindowsChrome();
+    await page.waitForFunction(() => window.__spaTestOkClicked === true, null, {
+        polling: 100,
+        timeout: 0,
     });
 }
 
@@ -181,7 +338,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
             await waitForNav( page, HOME_NAV_LABELS );
             await page.locator( "#nav a.active", { hasText: "Home" }).waitFor();
         } finally {
-            await page.evaluate(() => alert( "OK" ));
+            await waitForOk( page );
             await page.close();
         }
     });
@@ -207,7 +364,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
 
             await page.locator( "#content .update-doc-bar" ).waitFor();
         } finally {
-            await page.evaluate(() => alert( "OK" ));
+            await waitForOk( page );
             await page.close();
         }
     });
@@ -230,7 +387,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
             await page.locator( "#content #next-steps" ).waitFor();
             await page.getByRole( "link", { name: "1. Declare the Plug-in Point", exact: true }).waitFor();
         } finally {
-            await page.evaluate(() => alert( "OK" ));
+            await waitForOk( page );
             await context.close();
         }
     });
@@ -242,7 +399,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
             await waitForNav( page, HOME_NAV_LABELS );
             await page.locator( "#nav a.active", { hasText: "Home" }).waitFor();
         } finally {
-            await page.evaluate(() => alert( "OK" ));
+            await waitForOk( page );
             await page.close();
         }
     });
@@ -257,7 +414,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
                 "none",
             );
         } finally {
-            await page.evaluate(() => alert( "OK" ));
+            await waitForOk( page );
             await page.close();
         }
     });
@@ -295,7 +452,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
             await page.getByRole( "link", { name: "Back", exact: true }).click();
             await waitForNav( page, DETAIL_NAV_LABELS );
         } finally {
-            await page.evaluate(() => alert( "OK" ));
+            await waitForOk( page );
             await page.close();
         }
     });
