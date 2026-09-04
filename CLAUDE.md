@@ -92,6 +92,10 @@ this one) has no way to tell it apart from finished work.
 # Test-design scaffold check; runs no assertions and emits nothing.
 /home/adamsl/letta-code/node_modules/.bin/tsc -p app_tests/tsconfig.json
 
+# Run browser characterization tests headlessly, or watch them in Chrome.
+npm test
+npm run test:headed
+
 # Regenerate one leaf's source-derived docs (real Claude Agent SDK call).
 # Needs .venv; ANTHROPIC_API_KEY / ANTHROPIC_BASE_URL must stay UNSET so the
 # SDK uses local Claude Code subscription auth instead of direct-API billing.

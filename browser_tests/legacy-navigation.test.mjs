@@ -7,6 +7,8 @@ import { after, before, describe, test } from "node:test";
 import { chromium } from "playwright-core";
 
 const PROJECT_ROOT = fileURLToPath( new URL( "../", import.meta.url ) );
+const SHOW_BROWSER = process.env.SPA_TEST_HEADED === "1";
+const SLOW_MO = Number.parseInt( process.env.SPA_TEST_SLOW_MO ?? "0", 10 );
 const HOME_NAV_LABELS = [
     "Home",
     "Claude Agent Adapter",
@@ -97,7 +99,8 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
         await waitForServer( `${baseUrl}/index.html` );
         browser = await chromium.launch( {
             executablePath: "/usr/bin/google-chrome",
-            headless: true,
+            headless: !SHOW_BROWSER,
+            slowMo: SLOW_MO,
             args: [ "--no-sandbox" ],
         } );
     } );

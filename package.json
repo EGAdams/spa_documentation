@@ -5,7 +5,8 @@
     "scripts": {
         "build": "tsc -p app/tsconfig.build.json",
         "typecheck": "tsc -p app/tsconfig.json && tsc -p app_tests/tsconfig.json",
-        "test": "node --test --test-concurrency=1 browser_tests/*.test.mjs"
+        "test": "node --test --test-concurrency=1 browser_tests/*.test.mjs",
+        "test:headed": "SPA_TEST_HEADED=1 SPA_TEST_SLOW_MO=350 node --test --test-concurrency=1 browser_tests/*.test.mjs"
     },
     "devDependencies": {
         "playwright-core": "1.62.1",
