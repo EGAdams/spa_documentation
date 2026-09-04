@@ -46,13 +46,13 @@ async function reservePort() {
     await new Promise( ( resolve, reject ) => {
         server.once( "error", reject );
         server.listen( 0, "127.0.0.1", resolve );
-    } );
+    });
     const address = server.address();
     assert.ok( address && typeof address !== "string" );
     const { port } = address;
     await new Promise( ( resolve, reject ) => {
-        server.close( ( error ) => error ? reject( error ) : resolve() );
-    } );
+        server.close( ( error ) => error ? reject( error ) : resolve());
+    });
     return port;
 }
 
@@ -91,7 +91,7 @@ function focusWindowsChrome() {
     ].join( " " );
     spawnSync( "powershell.exe", [ "-NoProfile", "-Command", script ], {
         stdio: "ignore",
-    } );
+    });
 }
 
 async function waitForNav( page, expected ) {
@@ -109,7 +109,7 @@ async function openConversationStatus( page ) {
     await page.goto(
         `${baseUrl}/index.html#item=voice_communication/conversation_agent&tab=status`,
     );
-    await page.getByRole( "link", { name: "1. Declare the Plug-in Point", exact: true } ).waitFor();
+    await page.getByRole( "link", { name: "1. Declare the Plug-in Point", exact: true }).waitFor();
 }
 
 describe( "legacy SPA navigation characterization", { concurrency: false }, () => {
@@ -125,11 +125,11 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
                 "python3",
                 "server.py",
                 String( port ),
-            ], { stdio: "ignore" } )
+            ], { stdio: "ignore" })
             : spawn( "python3", [ "server.py", String( port ) ], {
                 cwd: PROJECT_ROOT,
                 stdio: "ignore",
-            } );
+            });
         await waitForServer( `${baseUrl}/index.html` );
         browser = await chromium.launch( {
             executablePath: IS_WINDOWS
@@ -143,8 +143,8 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
                     ? [ "--window-position=50,50", "--window-size=1280,800" ]
                     : [] ),
             ],
-        } );
-    } );
+        });
+    });
 
     after( async () => {
         if ( SHOW_BROWSER && HOLD_OPEN_MS > 0 && browser ) {
@@ -164,7 +164,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
                     textAlign: "center",
                     top: "0",
                     zIndex: "99999",
-                } );
+                });
                 document.body.appendChild( banner );
             }, HOLD_OPEN_MS );
             focusWindowsChrome();
@@ -172,34 +172,34 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
         }
         await browser?.close();
         serverProcess?.kill( "SIGTERM" );
-    } );
+    });
 
     test( "renders the established home navigation in order", async () => {
         const page = await createPage();
         try {
             await page.goto( `${baseUrl}/index.html` );
             await waitForNav( page, HOME_NAV_LABELS );
-            await page.locator( "#nav a.active", { hasText: "Home" } ).waitFor();
+            await page.locator( "#nav a.active", { hasText: "Home" }).waitFor();
         } finally {
             await page.close();
         }
-    } );
+    });
 
     test( "drills down to a leaf and preserves all five detail tabs", async () => {
         const page = await createPage();
         try {
             await page.goto( `${baseUrl}/index.html` );
-            await page.getByRole( "link", { name: "Catherine Agent", exact: true } ).click();
-            await page.getByRole( "link", { name: "Basic Agent", exact: true } ).click();
+            await page.getByRole( "link", { name: "Catherine Agent", exact: true }).click();
+            await page.getByRole( "link", { name: "Basic Agent", exact: true }).click();
             await waitForNav( page, DETAIL_NAV_LABELS );
 
             for ( const [ label, fileName ] of DETAIL_TABS ) {
                 const responsePromise = page.waitForResponse( ( response ) =>
                     response.url().endsWith( `/catherine_agent_sdk/basic_agent/${fileName}` ),
                 );
-                await page.getByRole( "link", { name: label, exact: true } ).click();
+                await page.getByRole( "link", { name: label, exact: true }).click();
                 assert.equal( ( await responsePromise ).status(), 200 );
-                await page.locator( "#nav a.active", { hasText: label } ).waitFor();
+                await page.locator( "#nav a.active", { hasText: label }).waitFor();
                 assert.deepEqual( await navLabels( page ), DETAIL_NAV_LABELS );
                 assert.notEqual( await page.locator( "#content" ).innerHTML(), "" );
             }
@@ -208,7 +208,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
         } finally {
             await page.close();
         }
-    } );
+    });
 
     test( "applies a deep-linked tab and scrolls to its anchor", async () => {
         const context = await browser.newContext();
@@ -217,7 +217,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
             Element.prototype.scrollIntoView = function scrollIntoView() {
                 window.__lastScrolledId = this.id || null;
             };
-        } );
+        });
         const page = await context.newPage();
         if ( SHOW_BROWSER ) await page.bringToFront();
         try {
@@ -226,22 +226,22 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
             );
             await page.waitForFunction( () => window.__lastScrolledId === "next-steps" );
             await page.locator( "#content #next-steps" ).waitFor();
-            await page.getByRole( "link", { name: "1. Declare the Plug-in Point", exact: true } ).waitFor();
+            await page.getByRole( "link", { name: "1. Declare the Plug-in Point", exact: true }).waitFor();
         } finally {
             await context.close();
         }
-    } );
+    });
 
     test( "falls back to Home for an unknown deep link", async () => {
         const page = await createPage();
         try {
             await page.goto( `${baseUrl}/index.html#item=missing/not_real&tab=source` );
             await waitForNav( page, HOME_NAV_LABELS );
-            await page.locator( "#nav a.active", { hasText: "Home" } ).waitFor();
+            await page.locator( "#nav a.active", { hasText: "Home" }).waitFor();
         } finally {
             await page.close();
         }
-    } );
+    });
 
     test( "hides the in-page header in embedded mode", async () => {
         const page = await createPage();
@@ -255,20 +255,20 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
         } finally {
             await page.close();
         }
-    } );
+    });
 
     test( "drills into both embedded lessons and backs out one level at a time", async () => {
         const page = await createPage();
         try {
             await openConversationStatus( page );
-            await page.getByRole( "link", { name: "1. Declare the Plug-in Point", exact: true } ).click();
+            await page.getByRole( "link", { name: "1. Declare the Plug-in Point", exact: true }).click();
 
             for ( const lesson of [
                 [ "Interface File", "Interface File Construction Status" ],
                 [ "Event Contracts", "Event Contracts Construction Status" ],
-            ] ) {
+            ]) {
                 const [ navLabel, heading ] = lesson;
-                await page.getByRole( "link", { name: navLabel, exact: true } ).click();
+                await page.getByRole( "link", { name: navLabel, exact: true }).click();
                 await page.getByRole( "heading", { name: heading, exact: true }).waitFor();
                 await page.waitForFunction( () =>
                     document.querySelectorAll( "#content .construction-task-focus svg" ).length === 2,
@@ -285,12 +285,12 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
                 );
             }
 
-            await page.getByRole( "link", { name: "Back", exact: true } ).click();
-            await page.getByRole( "link", { name: "2. Prove With One Adapter", exact: true } ).waitFor();
-            await page.getByRole( "link", { name: "Back", exact: true } ).click();
+            await page.getByRole( "link", { name: "Back", exact: true }).click();
+            await page.getByRole( "link", { name: "2. Prove With One Adapter", exact: true }).waitFor();
+            await page.getByRole( "link", { name: "Back", exact: true }).click();
             await waitForNav( page, DETAIL_NAV_LABELS );
         } finally {
             await page.close();
         }
-    } );
-} );
+    });
+});
