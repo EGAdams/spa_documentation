@@ -269,7 +269,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
             ] ) {
                 const [ navLabel, heading ] = lesson;
                 await page.getByRole( "link", { name: navLabel, exact: true } ).click();
-                await page.getByRole( "heading", { name: heading, exact: true } ).waitFor();
+                await page.getByRole( "heading", { name: heading, exact: true }).waitFor();
                 await page.waitForFunction( () =>
                     document.querySelectorAll( "#content .construction-task-focus svg" ).length === 2,
                 );
