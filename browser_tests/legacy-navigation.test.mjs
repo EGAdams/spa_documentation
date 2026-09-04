@@ -101,7 +101,12 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
             executablePath: "/usr/bin/google-chrome",
             headless: !SHOW_BROWSER,
             slowMo: SLOW_MO,
-            args: [ "--no-sandbox" ],
+            args: [
+                "--no-sandbox",
+                ...( SHOW_BROWSER
+                    ? [ "--window-position=50,50", "--window-size=1280,800" ]
+                    : [] ),
+            ],
         } );
     } );
 
