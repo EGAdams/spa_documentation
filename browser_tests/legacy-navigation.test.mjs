@@ -181,6 +181,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
             await waitForNav( page, HOME_NAV_LABELS );
             await page.locator( "#nav a.active", { hasText: "Home" }).waitFor();
         } finally {
+            await page.evaluate( () => alert( "OK" ) );
             await page.close();
         }
     });
@@ -206,6 +207,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
 
             await page.locator( "#content .update-doc-bar" ).waitFor();
         } finally {
+            await page.evaluate( () => alert( "OK" ) );
             await page.close();
         }
     });
@@ -228,6 +230,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
             await page.locator( "#content #next-steps" ).waitFor();
             await page.getByRole( "link", { name: "1. Declare the Plug-in Point", exact: true }).waitFor();
         } finally {
+            await page.evaluate( () => alert( "OK" ) );
             await context.close();
         }
     });
@@ -239,6 +242,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
             await waitForNav( page, HOME_NAV_LABELS );
             await page.locator( "#nav a.active", { hasText: "Home" }).waitFor();
         } finally {
+            await page.evaluate( () => alert( "OK" ) );
             await page.close();
         }
     });
@@ -253,6 +257,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
                 "none",
             );
         } finally {
+            await page.evaluate( () => alert( "OK" ) );
             await page.close();
         }
     });
@@ -290,6 +295,7 @@ describe( "legacy SPA navigation characterization", { concurrency: false }, () =
             await page.getByRole( "link", { name: "Back", exact: true }).click();
             await waitForNav( page, DETAIL_NAV_LABELS );
         } finally {
+            await page.evaluate( () => alert( "OK" ) );
             await page.close();
         }
     });
